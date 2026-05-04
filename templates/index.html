@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Insurance Guardian</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #2E75B6;
+            text-align: center;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .form-box {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #2E75B6;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #1F5A9E;
+        }
+        .result-box {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-top: 20px;
+            border-left: 5px solid #2E75B6;
+        }
+        .result-box h2 {
+            color: #2E75B6;
+            margin-top: 0;
+        }
+        .requirement {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .no-result {
+            background: #f8d7da;
+            padding: 15px;
+            border-radius: 5px;
+            color: #721c24;
+        }
+        .frequency {
+            background: #d4edda;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🦷 AI Insurance Guardian</h1>
+    <p class="subtitle">Real-time dental insurance coverage checker</p>
+
+    <div class="form-box">
+        <form method="POST">
+            <label>Insurance Carrier:</label>
+            <select name="carrier_id">
+                <option value="">-- Select Carrier --</option>
+                {% for carrier in carriers %}
+                <option value="{{ carrier[0] }}">{{ carrier[1] }}</option>
+                {% endfor %}
+            </select>
+
+            <label>Procedure Code:</label>
+            <select name="cdt_code">
+                <option value="">-- Select Procedure --</option>
+                {% for proc in procedures %}
+                <option value="{{ proc[0] }}">{{ proc[0] }} - {{ proc[1] }}</option>
+                {% endfor %}
+            </select>
+
+            <button type="submit">Check Coverage</button>
+        </form>
+    </div>
+
+    {% if result %}
+    <div class="result-box">
+        <h2>Coverage Requirements</h2>
+        <p><strong>Carrier:</strong> {{ result[0] }}</p>
+        <p><strong>Procedure:</strong> {{ result[1] }}</p>
+        <div class="requirement">
+            <strong>📋 Required Documentation:</strong><br>
+            {{ result[2] }}
+        </div>
+        <div class="frequency">
+            <strong>📅 Frequency Limit:</strong> {{ result[3] }} years between procedures
+        </div>
+        {% if result[4] %}
+        <div class="requirement">
+            <strong>⚠️ Important Notes:</strong><br>
+            {{ result[4] }}
+        </div>
+        {% endif %}
+    </div>
+    {% elif request.method == "POST" %}
+    <div class="result-box">
+        <div class="no-result">
+            No coverage rules found for this carrier and procedure combination.
+        </div>
+    </div>
+    {% endif %}
+
+</body>
+</html>
