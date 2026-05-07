@@ -1,10 +1,65 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask_login import LoginManager, login_user, login_required, logout_user, current_user
+from werkzeug.security import generate_password_hash, check_password_hash
+from audit import log_action
 import sqlite3
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
+app.secret_key = "insuranceguardian2024secretkey"
+app.permanent_session_lifetime = timedelta(minutes=30)
+
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = "login"
+
+class User:
+    def __init__(self, id, username, role):
+        self.id = id
+        self.username = username
+        self.role = role
+        self.is_authenticated = True
+        self.is_active = True
+        self.is_anonymous = False
+    def get_id(self):
+        return str(self.id)
+
+def get_db():
+    conn = sqlite3.connect("insurance_guardian.db")
+    conn.row_factory = sqlite3.Row
+    return conn
+
+def init_users_table():
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY,
+            username TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            role TEXT DEFAULT 'staff'
+        )
+    """)
+    cursor.execute("SELECT COUNT(*) FROM users")
+    if cursor.fetchone()[0] == 0:
+        cursor.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)",
+            ("admin", generate_password_hash("dental123"), "admin"))
+    conn.commit()
+    conn.close()
+
+@login_manager.user_loader
+def load_user(user_id):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))
+    row = cursor.fetchone()
+    conn.close()
+    if row:
+        return User(row["id"], row["username"], row["role"])
+    return None
 
 def get_carriers():
-    conn = sqlite3.connect("insurance_guardian.db")
+    conn = get_db()
     cursor = conn.cursor()
     cursor.execute("SELECT id, name FROM carriers")
     results = cursor.fetchall()
@@ -12,7 +67,7 @@ def get_carriers():
     return results
 
 def get_procedures():
-    conn = sqlite3.connect("insurance_guardian.db")
+    conn = get_db()
     cursor = conn.cursor()
     cursor.execute("SELECT cdt_code, description FROM procedures")
     results = cursor.fetchall()
@@ -20,10 +75,11 @@ def get_procedures():
     return results
 
 def check_coverage(carrier_id, cdt_code):
-    conn = sqlite3.connect("insurance_guardian.db")
+    conn = get_db()
     cursor = conn.cursor()
     cursor.execute("""
-        SELECT carriers.name, coverage_rules.cdt_code, coverage_rules.requirement, coverage_rules.frequency_limit_years, coverage_rules.notes
+        SELECT carriers.name, coverage_rules.cdt_code, coverage_rules.requirement,
+               coverage_rules.frequency_limit_years, coverage_rules.notes
         FROM coverage_rules
         JOIN carriers ON carriers.id = coverage_rules.carrier_id
         WHERE carriers.id = ? AND coverage_rules.cdt_code = ?
@@ -32,7 +88,36 @@ def check_coverage(carrier_id, cdt_code):
     conn.close()
     return result
 
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        username = request.form.get("username")
+        password = request.form.get("password")
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
+        row = cursor.fetchone()
+        conn.close()
+        if row and check_password_hash(row["password"], password):
+            user = User(row["id"], row["username"], row["role"])
+            login_user(user)
+            session.permanent = True
+            log_action(username, "LOGIN", "User logged in successfully")
+            return redirect(url_for("index"))
+        else:
+            log_action(username, "FAILED_LOGIN", "Invalid login attempt")
+            flash("Invalid username or password")
+    return render_template("login.html")
+
+@app.route("/logout")
+@login_required
+def logout():
+    log_action(current_user.username, "LOGOUT", "User logged out")
+    logout_user()
+    return redirect(url_for("login"))
+
 @app.route("/", methods=["GET", "POST"])
+@login_required
 def index():
     carriers = get_carriers()
     procedures = get_procedures()
@@ -41,7 +126,9 @@ def index():
         carrier_id = request.form.get("carrier_id")
         cdt_code = request.form.get("cdt_code")
         result = check_coverage(carrier_id, cdt_code)
+        log_action(current_user.username, "COVERAGE_CHECK", f"Checked {cdt_code} for carrier_id {carrier_id}")
     return render_template("index.html", carriers=carriers, procedures=procedures, result=result)
 
 if __name__ == "__main__":
+    init_users_table()
     app.run(debug=True)
