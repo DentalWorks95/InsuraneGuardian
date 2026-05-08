@@ -10,15 +10,15 @@
             padding: 20px;
             background-color: #f5f5f5;
         }
-        h1 {
-            color: #2E75B6;
-            text-align: center;
-        }
-        .subtitle {
-            text-align: center;
-            color: #666;
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 30px;
         }
+        h1 { color: #2E75B6; margin: 0; }
+        .user-info { color: #666; font-size: 14px; }
+        .logout { color: #2E75B6; text-decoration: none; font-size: 14px; }
         .form-box {
             background: white;
             padding: 30px;
@@ -31,13 +31,14 @@
             margin-bottom: 5px;
             color: #333;
         }
-        select {
+        input, select {
             width: 100%;
             padding: 10px;
             margin-bottom: 20px;
             border: 1px solid #ddd;
             border-radius: 5px;
             font-size: 16px;
+            box-sizing: border-box;
         }
         button {
             background-color: #2E75B6;
@@ -49,23 +50,73 @@
             cursor: pointer;
             width: 100%;
         }
-        button:hover {
-            background-color: #1F5A9E;
-        }
+        button:hover { background-color: #1F5A9E; }
         .result-box {
             background: white;
             padding: 30px;
             border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             margin-top: 20px;
-            border-left: 5px solid #2E75B6;
         }
-        .result-box h2 {
-            color: #2E75B6;
-            margin-top: 0;
+        .result-box h2 { margin-top: 0; }
+        .patient-header {
+            background: #f0f7ff;
+            padding: 10px 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-size: 16px;
+            color: #333;
+        }
+        .alert-red { border-left: 5px solid #dc3545; }
+        .alert-yellow { border-left: 5px solid #ffc107; }
+        .alert-green { border-left: 5px solid #28a745; }
+        .alert-unknown { border-left: 5px solid #6c757d; }
+        .badge-red {
+            background: #dc3545;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+        .badge-yellow {
+            background: #ffc107;
+            color: #333;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+        .badge-green {
+            background: #28a745;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+        .badge-unknown {
+            background: #6c757d;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: bold;
         }
         .requirement {
             background: #fff3cd;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .frequency {
+            background: #d4edda;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .notes {
+            background: #f8f9fa;
             padding: 15px;
             border-radius: 5px;
             margin: 10px 0;
@@ -76,20 +127,33 @@
             border-radius: 5px;
             color: #721c24;
         }
-        .frequency {
-            background: #d4edda;
+        .checklist {
+            background: #e8f4f8;
             padding: 15px;
             border-radius: 5px;
             margin: 10px 0;
         }
+        .checklist ul {
+            margin: 5px 0;
+            padding-left: 20px;
+        }
+        .checklist li { margin: 5px 0; }
     </style>
 </head>
 <body>
-    <h1>🦷 AI Insurance Guardian</h1>
-    <p class="subtitle">Real-time dental insurance coverage checker</p>
+    <div class="header">
+        <h1>🦷 AI Insurance Guardian</h1>
+        <div>
+            <span class="user-info">Logged in as: {{ current_user.username }}</span> |
+            <a href="/logout" class="logout">Logout</a>
+        </div>
+    </div>
 
     <div class="form-box">
         <form method="POST">
+            <label>Patient Name:</label>
+            <input type="text" name="patient_name" placeholder="Enter patient name" value="{{ patient_name or '' }}">
+
             <label>Insurance Carrier:</label>
             <select name="carrier_id">
                 <option value="">-- Select Carrier --</option>
@@ -111,28 +175,73 @@
     </div>
 
     {% if result %}
-    <div class="result-box">
-        <h2>Coverage Requirements</h2>
+    <div class="result-box alert-{{ alert_level }}">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h2>Coverage Requirements</h2>
+            {% if alert_level == "red" %}
+            <span class="badge-red">⚠️ Pre-Auth Required</span>
+            {% elif alert_level == "yellow" %}
+            <span class="badge-yellow">⚡ Documentation Needed</span>
+            {% elif alert_level == "green" %}
+            <span class="badge-green">✅ Looks Good</span>
+            {% else %}
+            <span class="badge-unknown">❓ Verify Coverage</span>
+            {% endif %}
+        </div>
+
+        {% if patient_name %}
+        <div class="patient-header">
+            👤 Patient: <strong>{{ patient_name }}</strong>
+        </div>
+        {% endif %}
+
         <p><strong>Carrier:</strong> {{ result[0] }}</p>
         <p><strong>Procedure:</strong> {{ result[1] }}</p>
+
         <div class="requirement">
             <strong>📋 Required Documentation:</strong><br>
             {{ result[2] }}
         </div>
+
+        {% if result[3] and result[3] > 0 %}
         <div class="frequency">
-            <strong>📅 Frequency Limit:</strong> {{ result[3] }} years between procedures
+            <strong>📅 Frequency Limit:</strong> {{ result[3] }} year(s) between procedures
         </div>
+        {% endif %}
+
         {% if result[4] %}
-        <div class="requirement">
+        <div class="notes">
             <strong>⚠️ Important Notes:</strong><br>
             {{ result[4] }}
         </div>
         {% endif %}
+
+        <div class="checklist">
+            <strong>✅ Before Proceeding — Capture:</strong>
+            <ul>
+                {% if "radiograph" in result[2]|lower or "x-ray" in result[2]|lower %}
+                <li>📷 Periapical or bitewing radiograph</li>
+                {% endif %}
+                {% if "photo" in result[2]|lower %}
+                <li>📸 Intraoral photograph</li>
+                {% endif %}
+                {% if "periodontal" in result[2]|lower or "pocket" in result[2]|lower %}
+                <li>📊 Periodontal chart with pocket depths</li>
+                {% endif %}
+                {% if "narrative" in result[2]|lower or "narrative" in result[4]|lower %}
+                <li>📝 Clinical narrative</li>
+                {% endif %}
+                {% if "pre-authorization" in result[2]|lower or "pre-authorization" in result[4]|lower %}
+                <li>📬 Submit pre-authorization to carrier before proceeding</li>
+                {% endif %}
+            </ul>
+        </div>
     </div>
+
     {% elif request.method == "POST" %}
-    <div class="result-box">
+    <div class="result-box alert-unknown">
         <div class="no-result">
-            No coverage rules found for this carrier and procedure combination.
+            ❓ No specific coverage rules found for this carrier and procedure combination. Please verify coverage directly with the carrier.
         </div>
     </div>
     {% endif %}

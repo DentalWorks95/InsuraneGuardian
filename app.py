@@ -69,7 +69,7 @@ def get_carriers():
 def get_procedures():
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT cdt_code, description FROM procedures")
+    cursor.execute("SELECT cdt_code, description FROM procedures ORDER BY cdt_code")
     results = cursor.fetchall()
     conn.close()
     return results
@@ -87,6 +87,35 @@ def check_coverage(carrier_id, cdt_code):
     result = cursor.fetchone()
     conn.close()
     return result
+
+def get_alert_level(result, cdt_code):
+    if not result:
+        return "unknown"
+    requirement = result[2].lower()
+    notes = result[4].lower() if result[4] else ""
+    combined = requirement + " " + notes
+    if "pre-authorization required" in combined:
+        return "red"
+    yellow_triggers = [
+        "required", "must be", "charting", "radiograph",
+        "photograph", "documentation", "narrative", "evidence",
+        "pocket depth", "bone loss", "bleeding", "recommended",
+        "verify", "submitted", "showing"
+    ]
+    if any(word in combined for word in yellow_triggers):
+        return "yellow"
+    return "green"
+
+@login_manager.user_loader
+def load_user(user_id):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))
+    row = cursor.fetchone()
+    conn.close()
+    if row:
+        return User(row["id"], row["username"], row["role"])
+    return None
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -122,12 +151,17 @@ def index():
     carriers = get_carriers()
     procedures = get_procedures()
     result = None
+    alert_level = None
+    patient_name = None
+    cdt_code = None
     if request.method == "POST":
         carrier_id = request.form.get("carrier_id")
         cdt_code = request.form.get("cdt_code")
+        patient_name = request.form.get("patient_name")
         result = check_coverage(carrier_id, cdt_code)
-        log_action(current_user.username, "COVERAGE_CHECK", f"Checked {cdt_code} for carrier_id {carrier_id}")
-    return render_template("index.html", carriers=carriers, procedures=procedures, result=result)
+        alert_level = get_alert_level(result, cdt_code)
+        log_action(current_user.username, "COVERAGE_CHECK", f"Patient: {patient_name} | Checked {cdt_code} for carrier_id {carrier_id} | Alert: {alert_level}")
+    return render_template("index.html", carriers=carriers, procedures=procedures, result=result, alert_level=alert_level, patient_name=patient_name, cdt_code=cdt_code)
 
 if __name__ == "__main__":
     init_users_table()
