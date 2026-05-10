@@ -3,12 +3,11 @@ from flask_login import LoginManager, login_user, login_required, logout_user, c
 from werkzeug.security import generate_password_hash, check_password_hash
 from audit import log_action
 import sqlite3
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 app = Flask(__name__)
 app.secret_key = "insuranceguardian2024secretkey"
 app.permanent_session_lifetime = timedelta(minutes=30)
-
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "login"
@@ -32,18 +31,10 @@ def get_db():
 def init_users_table():
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY,
-            username TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL,
-            role TEXT DEFAULT 'staff'
-        )
-    """)
+    cursor.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, username TEXT UNIQUE NOT NULL, password TEXT NOT NULL, role TEXT DEFAULT 'staff')")
     cursor.execute("SELECT COUNT(*) FROM users")
     if cursor.fetchone()[0] == 0:
-        cursor.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)",
-            ("admin", generate_password_hash("dental123"), "admin"))
+        cursor.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", ("admin", generate_password_hash("dental123"), "admin"))
     conn.commit()
     conn.close()
 
@@ -77,18 +68,12 @@ def get_procedures():
 def check_coverage(carrier_id, cdt_code):
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("""
-        SELECT carriers.name, coverage_rules.cdt_code, coverage_rules.requirement,
-               coverage_rules.frequency_limit_years, coverage_rules.notes
-        FROM coverage_rules
-        JOIN carriers ON carriers.id = coverage_rules.carrier_id
-        WHERE carriers.id = ? AND coverage_rules.cdt_code = ?
-    """, (carrier_id, cdt_code))
+    cursor.execute("SELECT carriers.name, coverage_rules.cdt_code, coverage_rules.requirement, coverage_rules.frequency_limit_years, coverage_rules.notes FROM coverage_rules JOIN carriers ON carriers.id = coverage_rules.carrier_id WHERE carriers.id = ? AND coverage_rules.cdt_code = ?", (carrier_id, cdt_code))
     result = cursor.fetchone()
     conn.close()
     return result
 
-def get_alert_level(result, cdt_code):
+def get_alert_level(result):
     if not result:
         return "unknown"
     requirement = result[2].lower()
@@ -96,26 +81,11 @@ def get_alert_level(result, cdt_code):
     combined = requirement + " " + notes
     if "pre-authorization required" in combined:
         return "red"
-    yellow_triggers = [
-        "required", "must be", "charting", "radiograph",
-        "photograph", "documentation", "narrative", "evidence",
-        "pocket depth", "bone loss", "bleeding", "recommended",
-        "verify", "submitted", "showing"
-    ]
-    if any(word in combined for word in yellow_triggers):
-        return "yellow"
+    yellow_triggers = ["required", "must be", "charting", "radiograph", "photograph", "documentation", "narrative", "evidence", "pocket depth", "bone loss", "bleeding", "recommended", "verify", "submitted", "showing"]
+    for word in yellow_triggers:
+        if word in combined:
+            return "yellow"
     return "green"
-
-@login_manager.user_loader
-def load_user(user_id):
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))
-    row = cursor.fetchone()
-    conn.close()
-    if row:
-        return User(row["id"], row["username"], row["role"])
-    return None
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -150,18 +120,19 @@ def logout():
 def index():
     carriers = get_carriers()
     procedures = get_procedures()
-    result = None
-    alert_level = None
+    results = []
     patient_name = None
-    cdt_code = None
     if request.method == "POST":
         carrier_id = request.form.get("carrier_id")
-        cdt_code = request.form.get("cdt_code")
         patient_name = request.form.get("patient_name")
-        result = check_coverage(carrier_id, cdt_code)
-        alert_level = get_alert_level(result, cdt_code)
-        log_action(current_user.username, "COVERAGE_CHECK", f"Patient: {patient_name} | Checked {cdt_code} for carrier_id {carrier_id} | Alert: {alert_level}")
-    return render_template("index.html", carriers=carriers, procedures=procedures, result=result, alert_level=alert_level, patient_name=patient_name, cdt_code=cdt_code)
+        cdt_codes = request.form.getlist("cdt_codes")
+        cdt_codes = [c for c in cdt_codes if c]
+        for cdt_code in cdt_codes:
+            result = check_coverage(carrier_id, cdt_code)
+            alert_level = get_alert_level(result)
+            results.append({"cdt_code": cdt_code, "result": result, "alert_level": alert_level})
+            log_action(current_user.username, "COVERAGE_CHECK", f"Patient: {patient_name} | {cdt_code} | carrier_id: {carrier_id} | Alert: {alert_level}")
+    return render_template("index.html", carriers=carriers, procedures=procedures, results=results, patient_name=patient_name)
 
 if __name__ == "__main__":
     init_users_table()
