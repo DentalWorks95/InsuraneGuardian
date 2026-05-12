@@ -12,6 +12,7 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "login"
 
+
 class User:
     def __init__(self, id, username, role):
         self.id = id
@@ -20,13 +21,16 @@ class User:
         self.is_authenticated = True
         self.is_active = True
         self.is_anonymous = False
+
     def get_id(self):
         return str(self.id)
+
 
 def get_db():
     conn = sqlite3.connect("insurance_guardian.db")
     conn.row_factory = sqlite3.Row
     return conn
+
 
 def init_users_table():
     conn = get_db()
@@ -37,6 +41,7 @@ def init_users_table():
         cursor.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", ("admin", generate_password_hash("dental123"), "admin"))
     conn.commit()
     conn.close()
+
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -49,6 +54,7 @@ def load_user(user_id):
         return User(row["id"], row["username"], row["role"])
     return None
 
+
 def get_carriers():
     conn = get_db()
     cursor = conn.cursor()
@@ -56,6 +62,7 @@ def get_carriers():
     results = cursor.fetchall()
     conn.close()
     return results
+
 
 def get_procedures():
     conn = get_db()
@@ -65,6 +72,7 @@ def get_procedures():
     conn.close()
     return results
 
+
 def check_coverage(carrier_id, cdt_code):
     conn = get_db()
     cursor = conn.cursor()
@@ -72,6 +80,21 @@ def check_coverage(carrier_id, cdt_code):
     result = cursor.fetchone()
     conn.close()
     return result
+
+
+def get_tooth_location(tooth_number):
+    try:
+        tooth = int(tooth_number)
+        anterior = [6, 7, 8, 9, 10, 11, 22, 23, 24, 25, 26, 27]
+        if tooth in anterior:
+            return "Anterior"
+        elif 1 <= tooth <= 32:
+            return "Posterior"
+        else:
+            return "Unknown"
+    except Exception:
+        return "Unknown"
+
 
 def get_alert_level(result):
     if not result:
@@ -86,6 +109,7 @@ def get_alert_level(result):
         if word in combined:
             return "yellow"
     return "green"
+
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -108,12 +132,14 @@ def login():
             flash("Invalid username or password")
     return render_template("login.html")
 
+
 @app.route("/logout")
 @login_required
 def logout():
     log_action(current_user.username, "LOGOUT", "User logged out")
     logout_user()
     return redirect(url_for("login"))
+
 
 @app.route("/", methods=["GET", "POST"])
 @login_required
@@ -126,13 +152,17 @@ def index():
         carrier_id = request.form.get("carrier_id")
         patient_name = request.form.get("patient_name")
         cdt_codes = request.form.getlist("cdt_codes")
+        tooth_numbers = request.form.getlist("tooth_numbers")
         cdt_codes = [c for c in cdt_codes if c]
-        for cdt_code in cdt_codes:
+        for i, cdt_code in enumerate(cdt_codes):
             result = check_coverage(carrier_id, cdt_code)
             alert_level = get_alert_level(result)
-            results.append({"cdt_code": cdt_code, "result": result, "alert_level": alert_level})
-            log_action(current_user.username, "COVERAGE_CHECK", f"Patient: {patient_name} | {cdt_code} | carrier_id: {carrier_id} | Alert: {alert_level}")
+            tooth = tooth_numbers[i] if i < len(tooth_numbers) else ""
+            tooth_location = get_tooth_location(tooth) if tooth else ""
+            results.append({"cdt_code": cdt_code, "result": result, "alert_level": alert_level, "tooth": tooth, "tooth_location": tooth_location})
+            log_action(current_user.username, "COVERAGE_CHECK", f"Patient: {patient_name} | {cdt_code} | Tooth: {tooth} | carrier_id: {carrier_id} | Alert: {alert_level}")
     return render_template("index.html", carriers=carriers, procedures=procedures, results=results, patient_name=patient_name)
+
 
 if __name__ == "__main__":
     init_users_table()
