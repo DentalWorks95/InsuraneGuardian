@@ -1,197 +1,310 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>AI Insurance Guardian</title>
-<style>
-body { font-family: Arial, sans-serif; max-width: 900px; margin: 40px auto; padding: 20px; background-color: #f5f5f5; }
-.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-h1 { color: #2E75B6; margin: 0; }
-.user-info { color: #666; font-size: 14px; }
-.logout { color: #2E75B6; text-decoration: none; font-size: 14px; }
-.form-box { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-label { font-weight: bold; display: block; margin-bottom: 5px; color: #333; }
-input, select { width: 100%; padding: 10px; margin-bottom: 20px; border: 1px solid #ddd; border-radius: 5px; font-size: 16px; box-sizing: border-box; }
-.procedure-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
-.procedure-row select { margin-bottom: 0; flex: 2; }
-.procedure-row input { margin-bottom: 0; flex: 1; }
-.remove-btn { background: #dc3545; color: white; border: none; border-radius: 5px; padding: 10px 15px; cursor: pointer; font-size: 14px; white-space: nowrap; }
-.add-btn { background: #28a745; color: white; border: none; border-radius: 5px; padding: 10px 20px; cursor: pointer; font-size: 14px; margin-bottom: 20px; }
-button[type=submit] { background-color: #2E75B6; color: white; padding: 12px 30px; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; width: 100%; }
-button[type=submit]:hover { background-color: #1F5A9E; }
-.result-box { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-top: 20px; }
-.result-box h2 { margin-top: 0; }
-.patient-header { background: #f0f7ff; padding: 10px 15px; border-radius: 5px; margin-bottom: 20px; font-size: 16px; }
-.alert-red { border-left: 5px solid #dc3545; }
-.alert-yellow { border-left: 5px solid #ffc107; }
-.alert-green { border-left: 5px solid #28a745; }
-.alert-unknown { border-left: 5px solid #6c757d; }
-.badge-red { background: #dc3545; color: white; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: bold; }
-.badge-yellow { background: #ffc107; color: #333; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: bold; }
-.badge-green { background: #28a745; color: white; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: bold; }
-.badge-unknown { background: #6c757d; color: white; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: bold; }
-.procedure-result { border: 1px solid #eee; border-radius: 8px; padding: 15px; margin-bottom: 15px; }
-.procedure-result-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-.tooth-badge { background: #e8f4f8; color: #2E75B6; padding: 3px 10px; border-radius: 10px; font-size: 13px; margin-left: 8px; }
-.requirement { background: #fff3cd; padding: 12px; border-radius: 5px; margin: 8px 0; font-size: 14px; }
-.frequency { background: #d4edda; padding: 12px; border-radius: 5px; margin: 8px 0; font-size: 14px; }
-.notes { background: #f8f9fa; padding: 12px; border-radius: 5px; margin: 8px 0; font-size: 14px; }
-.checklist { background: #e8f4f8; padding: 12px; border-radius: 5px; margin: 8px 0; font-size: 14px; }
-.checklist ul { margin: 5px 0; padding-left: 20px; }
-.checklist li { margin: 4px 0; }
-.no-result { background: #f8d7da; padding: 12px; border-radius: 5px; color: #721c24; font-size: 14px; }
-.summary-bar { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-.summary-item { padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: bold; }
-.column-labels { display: flex; gap: 10px; margin-bottom: 5px; }
-.col-procedure { flex: 2; font-size: 13px; color: #666; font-weight: bold; padding-left: 5px; }
-.col-tooth { flex: 1; font-size: 13px; color: #666; font-weight: bold; padding-left: 5px; }
-</style>
-<script>
-function addProcedure() {
-const container = document.getElementById('procedures-container');
-const row = document.createElement('div');
-row.className = 'procedure-row';
-row.innerHTML = `
-<select name="cdt_codes" style="flex:2; margin-bottom:0;">
-<option value="">-- Select Procedure --</option>
-{% for proc in procedures %}
-<option value="{{ proc[0] }}">{{ proc[0] }} - {{ proc[1] }}</option>
-{% endfor %}
-</select>
-<input type="text" name="tooth_numbers" placeholder="Tooth # (e.g. 14)" style="flex:1; margin-bottom:0;">
-<button type="button" class="remove-btn" onclick="this.parentElement.remove()">Remove</button>
-`;
-container.appendChild(row);
-}
-</script>
+    <title>AI Insurance Guardian</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 900px; margin: 40px auto; padding: 20px; background-color: #f5f5f5; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        h1 { color: #2E75B6; margin: 0; }
+        .nav { margin-bottom: 20px; }
+        .nav a { color: #2E75B6; text-decoration: none; margin-right: 20px; font-size: 15px; }
+        .user-info { color: #666; font-size: 14px; }
+        .logout { color: #2E75B6; text-decoration: none; font-size: 14px; }
+        .form-box { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        label { font-weight: bold; display: block; margin-bottom: 5px; color: #333; }
+        input, select { width: 100%; padding: 10px; margin-bottom: 20px; border: 1px solid #ddd; border-radius: 5px; font-size: 16px; box-sizing: border-box; }
+        .procedure-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
+        .procedure-row select { margin-bottom: 0; flex: 2; }
+        .procedure-row input { margin-bottom: 0; flex: 1; }
+        .remove-btn { background: #dc3545; color: white; border: none; border-radius: 5px; padding: 10px 15px; cursor: pointer; font-size: 14px; white-space: nowrap; }
+        .add-btn { background: #28a745; color: white; border: none; border-radius: 5px; padding: 10px 20px; cursor: pointer; font-size: 14px; margin-bottom: 10px; margin-right: 10px; }
+        .voice-btn { background: #6f42c1; color: white; border: none; border-radius: 5px; padding: 10px 20px; cursor: pointer; font-size: 14px; margin-bottom: 10px; }
+        .submit-btn { background-color: #2E75B6; color: white; padding: 12px 30px; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; width: 100%; margin-top: 10px; }
+        .submit-btn:hover { background-color: #1F5A9E; }
+        .voice-result { display: none; background: #e8f4f8; padding: 10px; border-radius: 5px; margin-bottom: 10px; font-size: 14px; color: #2E75B6; }
+        .result-box { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-top: 20px; }
+        .result-box h2 { margin-top: 0; }
+        .patient-header { background: #f0f7ff; padding: 10px 15px; border-radius: 5px; margin-bottom: 20px; font-size: 16px; }
+        .alert-red { border-left: 5px solid #dc3545; }
+        .alert-yellow { border-left: 5px solid #ffc107; }
+        .alert-green { border-left: 5px solid #28a745; }
+        .alert-unknown { border-left: 5px solid #6c757d; }
+        .badge-red { background: #dc3545; color: white; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: bold; }
+        .badge-yellow { background: #ffc107; color: #333; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: bold; }
+        .badge-green { background: #28a745; color: white; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: bold; }
+        .badge-unknown { background: #6c757d; color: white; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: bold; }
+        .procedure-result { border: 1px solid #eee; border-radius: 8px; padding: 15px; margin-bottom: 15px; }
+        .procedure-result-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .tooth-badge { background: #e8f4f8; color: #2E75B6; padding: 3px 10px; border-radius: 10px; font-size: 13px; margin-left: 8px; }
+        .requirement { background: #fff3cd; padding: 12px; border-radius: 5px; margin: 8px 0; font-size: 14px; }
+        .frequency { background: #d4edda; padding: 12px; border-radius: 5px; margin: 8px 0; font-size: 14px; }
+        .notes { background: #f8f9fa; padding: 12px; border-radius: 5px; margin: 8px 0; font-size: 14px; }
+        .checklist { background: #e8f4f8; padding: 12px; border-radius: 5px; margin: 8px 0; font-size: 14px; }
+        .checklist ul { margin: 5px 0; padding-left: 20px; }
+        .checklist li { margin: 4px 0; }
+        .no-result { background: #f8d7da; padding: 12px; border-radius: 5px; color: #721c24; font-size: 14px; }
+        .summary-bar { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .summary-item { padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: bold; }
+        .column-labels { display: flex; gap: 10px; margin-bottom: 5px; }
+        .col-procedure { flex: 2; font-size: 13px; color: #666; font-weight: bold; padding-left: 5px; }
+        .col-tooth { flex: 1; font-size: 13px; color: #666; font-weight: bold; padding-left: 5px; }
+    </style>
 </head>
 <body>
-<div class="header">
-<h1>🦷 AI Insurance Guardian</h1>
-<div>
-<span class="user-info">Logged in as: {{ current_user.username }}</span> |
-<a href="/logout" class="logout">Logout</a>
-</div>
-</div>
+    <div class="header">
+        <h1>🦷 AI Insurance Guardian</h1>
+        <div>
+            <span class="user-info">Logged in as: {{ current_user.username }}</span> |
+            <a href="/logout" class="logout">Logout</a>
+        </div>
+    </div>
 
-<div class="form-box">
-<form method="POST">
-<label>Patient Name:</label>
-<input type="text" name="patient_name" placeholder="Enter patient name" value="{{ patient_name or '' }}">
+    <div class="nav">
+        <a href="/">🔍 Coverage Check</a>
+        <a href="/history">📋 Patient History</a>
+        <a href="/audit">🔒 Audit Log</a>
+    </div>
 
-<label>Insurance Carrier:</label>
-<select name="carrier_id">
-<option value="">-- Select Carrier --</option>
-{% for carrier in carriers %}
-<option value="{{ carrier[0] }}">{{ carrier[1] }}</option>
-{% endfor %}
-</select>
+    <div class="form-box">
+        <form method="POST" id="main-form">
+            <label>Patient Name:</label>
+            <input type="text" name="patient_name" id="patient_name" placeholder="Enter patient name" value="{{ patient_name or '' }}">
 
-<label>Procedures to Check:</label>
-<div class="column-labels">
-<div class="col-procedure">Procedure Code</div>
-<div class="col-tooth">Tooth Number</div>
-</div>
-<div id="procedures-container">
-<div class="procedure-row">
-<select name="cdt_codes" style="flex:2; margin-bottom:0;">
-<option value="">-- Select Procedure --</option>
-{% for proc in procedures %}
-<option value="{{ proc[0] }}">{{ proc[0] }} - {{ proc[1] }}</option>
-{% endfor %}
-</select>
-<input type="text" name="tooth_numbers" placeholder="Tooth # (e.g. 14)" style="flex:1; margin-bottom:0;">
-</div>
-</div>
-<br>
-<button type="button" class="add-btn" onclick="addProcedure()">+ Add Another Procedure</button>
-<button type="submit">Check Coverage</button>
-</form>
-</div>
+            <label>Insurance Carrier:</label>
+            <select name="carrier_id" id="carrier_id">
+                <option value="">-- Select Carrier --</option>
+                {% for carrier in carriers %}
+                <option value="{{ carrier[0] }}">{{ carrier[1] }}</option>
+                {% endfor %}
+            </select>
 
-{% if results %}
-<div class="result-box">
-<h2>Coverage Results</h2>
-{% if patient_name %}
-<div class="patient-header">
-👤 Patient: <strong>{{ patient_name }}</strong>
-</div>
-{% endif %}
+            <label>Procedures to Check:</label>
+            <div class="column-labels">
+                <div class="col-procedure">Procedure Code</div>
+                <div class="col-tooth">Tooth Number</div>
+            </div>
+            <div id="procedures-container">
+                <div class="procedure-row">
+                    <select name="cdt_codes" style="flex:2; margin-bottom:0;">
+                        <option value="">-- Select Procedure --</option>
+                        {% for proc in procedures %}
+                        <option value="{{ proc[0] }}">{{ proc[0] }} - {{ proc[1] }}</option>
+                        {% endfor %}
+                    </select>
+                    <input type="text" name="tooth_numbers" placeholder="Tooth # (e.g. 14)" style="flex:1; margin-bottom:0;">
+                </div>
+            </div>
+            <br>
+            <button type="button" class="add-btn" onclick="addProcedure()">+ Add Another Procedure</button>
+            <button type="button" class="voice-btn" onclick="startVoice()">🎤 Listen for Procedures</button>
+            <div class="voice-result" id="voice-result"></div>
+            <button type="submit" class="submit-btn">Check Coverage</button>
+        </form>
+    </div>
 
-<div class="summary-bar">
-{% for r in results %}
-{% if r.alert_level == "red" %}
-<span class="summary-item badge-red">⚠️ {{ r.cdt_code }}{% if r.tooth %} #{{ r.tooth }}{% endif %} — Pre-Auth Required</span>
-{% elif r.alert_level == "yellow" %}
-<span class="summary-item badge-yellow">⚡ {{ r.cdt_code }}{% if r.tooth %} #{{ r.tooth }}{% endif %} — Docs Needed</span>
-{% elif r.alert_level == "green" %}
-<span class="summary-item badge-green">✅ {{ r.cdt_code }}{% if r.tooth %} #{{ r.tooth }}{% endif %} — Looks Good</span>
-{% else %}
-<span class="summary-item badge-unknown">❓ {{ r.cdt_code }}{% if r.tooth %} #{{ r.tooth }}{% endif %} — Verify</span>
-{% endif %}
-{% endfor %}
-</div>
+    {% if results %}
+    <div class="result-box">
+        <h2>Coverage Results</h2>
+        {% if patient_name %}
+        <div class="patient-header">
+            👤 Patient: <strong>{{ patient_name }}</strong>
+        </div>
+        {% endif %}
 
-{% for r in results %}
-<div class="procedure-result alert-{{ r.alert_level }}">
-<div class="procedure-result-header">
-<strong>
-{{ r.cdt_code }}
-{% if r.tooth %}<span class="tooth-badge">Tooth #{{ r.tooth }}{% if r.tooth_location %} — {{ r.tooth_location }}{% endif %}</span>{% endif %}
-{% if r.result %} — {{ r.result[0] }}{% endif %}
-</strong>
-{% if r.alert_level == "red" %}
-<span class="badge-red">⚠️ Pre-Auth Required</span>
-{% elif r.alert_level == "yellow" %}
-<span class="badge-yellow">⚡ Documentation Needed</span>
-{% elif r.alert_level == "green" %}
-<span class="badge-green">✅ Looks Good</span>
-{% else %}
-<span class="badge-unknown">❓ Verify Coverage</span>
-{% endif %}
-</div>
+        <div class="summary-bar">
+            {% for r in results %}
+            {% if r.alert_level == "red" %}
+            <span class="summary-item badge-red">⚠️ {{ r.cdt_code }}{% if r.tooth %} #{{ r.tooth }}{% endif %} — Pre-Auth Required</span>
+            {% elif r.alert_level == "yellow" %}
+            <span class="summary-item badge-yellow">⚡ {{ r.cdt_code }}{% if r.tooth %} #{{ r.tooth }}{% endif %} — Docs Needed</span>
+            {% elif r.alert_level == "green" %}
+            <span class="summary-item badge-green">✅ {{ r.cdt_code }}{% if r.tooth %} #{{ r.tooth }}{% endif %} — Looks Good</span>
+            {% else %}
+            <span class="summary-item badge-unknown">❓ {{ r.cdt_code }}{% if r.tooth %} #{{ r.tooth }}{% endif %} — Verify</span>
+            {% endif %}
+            {% endfor %}
+        </div>
 
-{% if r.result %}
-<div class="requirement">
-<strong>📋 Required:</strong> {{ r.result[2] }}
-</div>
-{% if r.result[3] and r.result[3] > 0 %}
-<div class="frequency">
-<strong>📅 Frequency Limit:</strong> {{ r.result[3] }} year(s)
-</div>
-{% endif %}
-{% if r.result[4] %}
-<div class="notes">
-<strong>⚠️ Notes:</strong> {{ r.result[4] }}
-</div>
-{% endif %}
-<div class="checklist">
-<strong>✅ Capture Before Proceeding:</strong>
-<ul>
-{% if "radiograph" in r.result[2]|lower or "x-ray" in r.result[2]|lower or "radiograph" in r.result[4]|lower %}
-<li>📷 Radiograph</li>
-{% endif %}
-{% if "photo" in r.result[2]|lower %}
-<li>📸 Intraoral photograph</li>
-{% endif %}
-{% if "periodontal" in r.result[2]|lower or "pocket" in r.result[2]|lower %}
-<li>📊 Periodontal chart</li>
-{% endif %}
-{% if "narrative" in r.result[2]|lower or "narrative" in r.result[4]|lower %}
-<li>📝 Clinical narrative</li>
-{% endif %}
-{% if "pre-authorization" in r.result[2]|lower or "pre-authorization" in r.result[4]|lower %}
-<li>📬 Submit pre-authorization</li>
-{% endif %}
-</ul>
-</div>
-{% else %}
-<div class="no-result">
-❓ No specific coverage rules found. Verify directly with carrier.
-</div>
-{% endif %}
-</div>
-{% endfor %}
-</div>
-{% endif %}
+        {% for r in results %}
+        <div class="procedure-result alert-{{ r.alert_level }}">
+            <div class="procedure-result-header">
+                <strong>
+                    {{ r.cdt_code }}
+                    {% if r.tooth %}<span class="tooth-badge">Tooth #{{ r.tooth }}{% if r.tooth_location %} — {{ r.tooth_location }}{% endif %}</span>{% endif %}
+                    {% if r.result %} — {{ r.result[0] }}{% endif %}
+                </strong>
+                {% if r.alert_level == "red" %}
+                <span class="badge-red">⚠️ Pre-Auth Required</span>
+                {% elif r.alert_level == "yellow" %}
+                <span class="badge-yellow">⚡ Documentation Needed</span>
+                {% elif r.alert_level == "green" %}
+                <span class="badge-green">✅ Looks Good</span>
+                {% else %}
+                <span class="badge-unknown">❓ Verify Coverage</span>
+                {% endif %}
+            </div>
+
+            {% if r.result %}
+            <div class="requirement">
+                <strong>📋 Required:</strong> {{ r.result[2] }}
+            </div>
+            {% if r.result[3] and r.result[3] > 0 %}
+            <div class="frequency">
+                <strong>📅 Frequency Limit:</strong> {{ r.result[3] }} year(s)
+            </div>
+            {% endif %}
+            {% if r.result[4] %}
+            <div class="notes">
+                <strong>⚠️ Notes:</strong> {{ r.result[4] }}
+            </div>
+            {% endif %}
+            <div class="checklist">
+                <strong>✅ Capture Before Proceeding:</strong>
+                <ul>
+                    {% if "radiograph" in r.result[2]|lower or "x-ray" in r.result[2]|lower or "radiograph" in r.result[4]|lower %}
+                    <li>📷 Radiograph</li>
+                    {% endif %}
+                    {% if "photo" in r.result[2]|lower %}
+                    <li>📸 Intraoral photograph</li>
+                    {% endif %}
+                    {% if "periodontal" in r.result[2]|lower or "pocket" in r.result[2]|lower %}
+                    <li>📊 Periodontal chart</li>
+                    {% endif %}
+                    {% if "narrative" in r.result[2]|lower or "narrative" in r.result[4]|lower %}
+                    <li>📝 Clinical narrative</li>
+                    {% endif %}
+                    {% if "pre-authorization" in r.result[2]|lower or "pre-authorization" in r.result[4]|lower %}
+                    <li>📬 Submit pre-authorization</li>
+                    {% endif %}
+                </ul>
+            </div>
+            {% else %}
+            <div class="no-result">
+                ❓ No specific coverage rules found. Verify directly with carrier.
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <script>
+        function addProcedure() {
+            const container = document.getElementById('procedures-container');
+            const row = document.createElement('div');
+            row.className = 'procedure-row';
+            row.innerHTML = `
+                <select name="cdt_codes" style="flex:2; margin-bottom:0;">
+                    <option value="">-- Select Procedure --</option>
+                    {% for proc in procedures %}
+                    <option value="{{ proc[0] }}">{{ proc[0] }} - {{ proc[1] }}</option>
+                    {% endfor %}
+                </select>
+                <input type="text" name="tooth_numbers" placeholder="Tooth # (e.g. 14)" style="flex:1; margin-bottom:0;">
+                <button type="button" class="remove-btn" onclick="this.parentElement.remove()">Remove</button>
+            `;
+            container.appendChild(row);
+        }
+
+        function startVoice() {
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                alert("Voice recognition requires Chrome browser.");
+                return;
+            }
+            const btn = document.querySelector('.voice-btn');
+            btn.textContent = "🎤 Listening...";
+            btn.style.backgroundColor = "#dc3545";
+            btn.disabled = true;
+
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'en-US';
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+            recognition.start();
+
+            recognition.onresult = function(event) {
+                const text = event.results[0][0].transcript;
+                const voiceResult = document.getElementById('voice-result');
+                voiceResult.textContent = '🎤 Heard: "' + text + '"';
+                voiceResult.style.display = 'block';
+
+                const textLower = text.toLowerCase();
+                const cdtMap = {
+    'completely bony': 'D7240',
+    'complete bony': 'D7240',
+    'partially bony': 'D7230',
+    'partial bony': 'D7230',
+    'bony impaction': 'D7230',
+    'boney impaction': 'D7230',
+    'partial boney': 'D7230',
+    'impaction': 'D7230',
+    'crown': 'D2740',
+    'buildup': 'D2950',
+    'root canal': 'D3330',
+    'surgical extraction': 'D7210',
+    'extraction': 'D7140',
+    'srp': 'D4341',
+    'scaling': 'D4341',
+    'deep cleaning': 'D4341',
+    'prophylaxis': 'D1110',
+    'cleaning': 'D1110',
+    'sealant': 'D1351',
+    'implant': 'D6010',
+    'full denture': 'D5110',
+    'complete denture': 'D5110',
+    'denture': 'D5110',
+    'partial denture': 'D5211',
+    'filling': 'D2393',
+    'composite': 'D2393',
+    'amalgam': 'D2160',
+    'panoramic': 'D0330',
+    'bitewing': 'D0274',
+    'bridge': 'D6240',
+    'buildup': 'D2950',
+    'bone graft': 'D7950',
+    'gingivectomy': 'D4210',
+    'osseous': 'D4260',
+};
+
+                let detectedCode = null;
+                for (const [keyword, code] of Object.entries(cdtMap)) {
+                    if (textLower.includes(keyword)) {
+                        detectedCode = code;
+                        break;
+                    }
+                }
+
+                const toothMatch = textLower.match(/(?:tooth\s+(?:number\s+)?|#\s*|number\s+)(\d+)/);
+                const toothNumber = toothMatch ? toothMatch[1] : null;
+
+                if (detectedCode) {
+                    const select = document.querySelector('select[name="cdt_codes"]');
+                    if (select) select.value = detectedCode;
+                }
+                if (toothNumber) {
+                    const toothInput = document.querySelector('input[name="tooth_numbers"]');
+                    if (toothInput) toothInput.value = toothNumber;
+                }
+
+                btn.textContent = "🎤 Listen for Procedures";
+                btn.style.backgroundColor = "#6f42c1";
+                btn.disabled = false;
+            };
+
+            recognition.onerror = function(event) {
+                alert("Voice error: " + event.error);
+                btn.textContent = "🎤 Listen for Procedures";
+                btn.style.backgroundColor = "#6f42c1";
+                btn.disabled = false;
+            };
+
+            recognition.onend = function() {
+                btn.textContent = "🎤 Listen for Procedures";
+                btn.style.backgroundColor = "#6f42c1";
+                btn.disabled = false;
+            };
+        }
+    </script>
 </body>
 </html>
