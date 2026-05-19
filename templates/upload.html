@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Insurance Guardian - Image Upload</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 900px; margin: 40px auto; padding: 20px; background-color: #f5f5f5; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        h1 { color: #2E75B6; margin: 0; }
+        .nav { margin-bottom: 20px; }
+        .nav a { color: #2E75B6; text-decoration: none; margin-right: 20px; font-size: 15px; }
+        .user-info { color: #666; font-size: 14px; }
+        .logout { color: #2E75B6; text-decoration: none; font-size: 14px; }
+        .form-box { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        label { font-weight: bold; display: block; margin-bottom: 5px; color: #333; }
+        select, input { width: 100%; padding: 10px; margin-bottom: 20px; border: 1px solid #ddd; border-radius: 5px; font-size: 16px; box-sizing: border-box; }
+        button { background-color: #2E75B6; color: white; padding: 12px 30px; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; width: 100%; }
+        button:hover { background-color: #1F5A9E; }
+        .upload-area { border: 2px dashed #2E75B6; border-radius: 10px; padding: 40px; text-align: center; margin-bottom: 20px; background: #f0f7ff; cursor: pointer; transition: all 0.3s; }
+        .upload-area:hover { background: #e0f0ff; }
+        .upload-area.dragover { background: #cce5ff; border-color: #004085; transform: scale(1.01); }
+        .upload-icon { font-size: 48px; margin-bottom: 10px; }
+        .upload-text { color: #2E75B6; font-size: 16px; margin-bottom: 5px; }
+        .upload-subtext { color: #666; font-size: 13px; }
+        .file-name { margin-top: 10px; color: #2E75B6; font-weight: bold; }
+        .result-box { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .result-box h2 { color: #2E75B6; margin-top: 0; }
+        .feedback-item { background: #d4edda; padding: 10px 15px; border-radius: 5px; margin-bottom: 8px; font-size: 14px; color: #155724; }
+        .warning-item { background: #fff3cd; padding: 10px 15px; border-radius: 5px; margin-bottom: 8px; font-size: 14px; color: #856404; }
+        .status-good { background: #28a745; color: white; padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: bold; display: inline-block; margin-bottom: 15px; }
+        .status-warning { background: #ffc107; color: #333; padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: bold; display: inline-block; margin-bottom: 15px; }
+        .image-info { background: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 15px; font-size: 14px; }
+        .error-box { background: #f8d7da; padding: 15px; border-radius: 5px; color: #721c24; }
+        .preview-img { max-width: 100%; max-height: 300px; border-radius: 8px; margin-top: 10px; display: none; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🦷 AI Insurance Guardian</h1>
+        <div>
+            <span class="user-info">Logged in as: {{ current_user.username }}</span> |
+            <a href="/logout" class="logout">Logout</a>
+        </div>
+    </div>
+
+    <div class="nav">
+        <a href="/">🔍 Coverage Check</a>
+        <a href="/upload">📷 Image Upload</a>
+        <a href="/history">📋 Patient History</a>
+        <a href="/audit">🔒 Audit Log</a>
+    </div>
+
+    <div class="form-box">
+        <h2 style="margin-top:0; color:#2E75B6;">📷 Upload Clinical Image for Analysis</h2>
+        <form method="POST" enctype="multipart/form-data" id="upload-form">
+            <label>Select Procedure Type:</label>
+            <select name="procedure_type">
+                <option value="">-- Select Procedure --</option>
+                {% for proc in procedures %}
+                <option value="{{ proc[0] }}">{{ proc[0] }} - {{ proc[1] }}</option>
+                {% endfor %}
+            </select>
+
+            <label>Upload Image (X-ray or Intraoral Photo):</label>
+            <div class="upload-area" id="upload-area">
+                <div class="upload-icon">📷</div>
+                <div class="upload-text">Click to upload or drag and drop</div>
+                <div class="upload-subtext">Supports: JPG, PNG, TIFF, BMP</div>
+                <div class="file-name" id="file-name"></div>
+                <img id="preview-img" class="preview-img" src="" alt="Preview">
+            </div>
+            <input type="file" id="file-input" name="file" accept=".jpg,.jpeg,.png,.tiff,.bmp,.gif" style="display:none;">
+
+            <button type="submit">🔍 Analyze Image</button>
+        </form>
+    </div>
+
+    {% if result %}
+    <div class="result-box">
+        <h2>Analysis Results</h2>
+
+        {% if result.error %}
+        <div class="error-box">❌ {{ result.error }}</div>
+
+        {% elif result.success %}
+        {% if result.checklist_satisfied %}
+        <span class="status-good">✅ Image Appears Adequate for Documentation</span>
+        {% else %}
+        <span class="status-warning">⚠️ Image May Need Improvement</span>
+        {% endif %}
+
+        <div class="image-info">
+            <strong>📊 Image Details:</strong><br>
+            Resolution: {{ result.width }} x {{ result.height }} pixels<br>
+            File Size: {{ (result.file_size / 1024)|round(1) }} KB<br>
+            Format: {{ result.mode }}
+        </div>
+
+        {% if result.feedback %}
+        <strong>✅ Feedback:</strong>
+        {% for item in result.feedback %}
+        <div class="feedback-item">✓ {{ item }}</div>
+        {% endfor %}
+        {% endif %}
+
+        {% if result.warnings %}
+        <strong>⚠️ Warnings:</strong>
+        {% for warning in result.warnings %}
+        <div class="warning-item">⚠️ {{ warning }}</div>
+        {% endfor %}
+        {% endif %}
+
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <script>
+        const uploadArea = document.getElementById('upload-area');
+        const fileInput = document.getElementById('file-input');
+        const fileName = document.getElementById('file-name');
+        const previewImg = document.getElementById('preview-img');
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                showPreview(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) {
+                showPreview(fileInput.files[0]);
+            }
+        });
+
+        function showPreview(file) {
+            fileName.textContent = file.name;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewImg.src = e.target.result;
+                previewImg.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+    </script>
+</body>
+</html>

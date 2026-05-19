@@ -196,6 +196,32 @@ def voice():
     from flask import jsonify
     result = listen_for_procedures()
     return jsonify(result)
+@app.route("/upload", methods=["GET", "POST"])
+@login_required
+def upload():
+    from flask import jsonify
+    from image_analysis import allowed_file, analyze_image
+    import os
+    result = None
+    if request.method == "POST":
+        if "file" not in request.files:
+            result = {"error": "No file uploaded"}
+        else:
+            file = request.files["file"]
+            procedure_type = request.form.get("procedure_type", "")
+            if file.filename == "":
+                result = {"error": "No file selected"}
+            elif allowed_file(file.filename):
+                filename = file.filename
+                upload_path = os.path.join("uploads", filename)
+                file.save(upload_path)
+                result = analyze_image(upload_path, procedure_type)
+                log_action(current_user.username, "IMAGE_UPLOAD", f"Uploaded {filename} for procedure {procedure_type}")
+            else:
+                result = {"error": "File type not allowed"}
+    carriers = get_carriers()
+    procedures = get_procedures()
+    return render_template("upload.html", result=result, carriers=carriers, procedures=procedures)
 if __name__ == "__main__":
     init_users_table()
     app.run(debug=True)
