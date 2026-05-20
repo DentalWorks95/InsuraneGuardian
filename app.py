@@ -224,4 +224,4 @@ def upload():
     return render_template("upload.html", result=result, carriers=carriers, procedures=procedures)
 if __name__ == "__main__":
     init_users_table()
-    app.run(debug=True)
+    app.run(debug=True, host="0.0.0.0", port=5000)
