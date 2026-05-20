@@ -2,29 +2,34 @@
 <html>
 <head>
     <title>AI Insurance Guardian</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body { font-family: Arial, sans-serif; max-width: 900px; margin: 40px auto; padding: 20px; background-color: #f5f5f5; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-        h1 { color: #2E75B6; margin: 0; }
-        .nav { margin-bottom: 20px; }
-        .nav a { color: #2E75B6; text-decoration: none; margin-right: 20px; font-size: 15px; }
-        .user-info { color: #666; font-size: 14px; }
-        .logout { color: #2E75B6; text-decoration: none; font-size: 14px; }
-        .form-box { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        label { font-weight: bold; display: block; margin-bottom: 5px; color: #333; }
-        input, select { width: 100%; padding: 10px; margin-bottom: 20px; border: 1px solid #ddd; border-radius: 5px; font-size: 16px; box-sizing: border-box; }
-        .procedure-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
-        .procedure-row select { margin-bottom: 0; flex: 2; }
-        .procedure-row input { margin-bottom: 0; flex: 1; }
-        .remove-btn { background: #dc3545; color: white; border: none; border-radius: 5px; padding: 10px 15px; cursor: pointer; font-size: 14px; white-space: nowrap; }
-        .add-btn { background: #28a745; color: white; border: none; border-radius: 5px; padding: 10px 20px; cursor: pointer; font-size: 14px; margin-bottom: 10px; margin-right: 10px; }
-        .voice-btn { background: #6f42c1; color: white; border: none; border-radius: 5px; padding: 10px 20px; cursor: pointer; font-size: 14px; margin-bottom: 10px; }
-        .submit-btn { background-color: #2E75B6; color: white; padding: 12px 30px; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; width: 100%; margin-top: 10px; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, sans-serif; background-color: #f5f5f5; padding: 15px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+        h1 { color: #2E75B6; font-size: clamp(20px, 4vw, 28px); }
+        .nav { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
+        .nav a { color: #2E75B6; text-decoration: none; font-size: 14px; background: white; padding: 8px 14px; border-radius: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+        .nav a:hover { background: #2E75B6; color: white; }
+        .user-info { color: #666; font-size: 13px; }
+        .logout { color: #2E75B6; text-decoration: none; font-size: 13px; }
+        .form-box { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        label { font-weight: bold; display: block; margin-bottom: 5px; color: #333; font-size: 15px; margin-top: 15px; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; }
+        .procedure-row { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; flex-wrap: wrap; }
+        .procedure-row select { flex: 2; min-width: 200px; }
+        .procedure-row input { flex: 1; min-width: 100px; }
+        .remove-btn { background: #dc3545; color: white; border: none; border-radius: 8px; padding: 12px 15px; cursor: pointer; font-size: 14px; white-space: nowrap; }
+        .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px; }
+        .add-btn { background: #28a745; color: white; border: none; border-radius: 8px; padding: 12px 20px; cursor: pointer; font-size: 15px; flex: 1; min-width: 150px; }
+        .voice-btn { background: #6f42c1; color: white; border: none; border-radius: 8px; padding: 12px 20px; cursor: pointer; font-size: 15px; flex: 1; min-width: 150px; }
+        .submit-btn { background-color: #2E75B6; color: white; padding: 14px; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; width: 100%; margin-top: 15px; font-weight: bold; }
         .submit-btn:hover { background-color: #1F5A9E; }
-        .voice-result { display: none; background: #e8f4f8; padding: 10px; border-radius: 5px; margin-bottom: 10px; font-size: 14px; color: #2E75B6; }
-        .result-box { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-top: 20px; }
-        .result-box h2 { margin-top: 0; }
-        .patient-header { background: #f0f7ff; padding: 10px 15px; border-radius: 5px; margin-bottom: 20px; font-size: 16px; }
+        .voice-result { display: none; background: #e8f4f8; padding: 10px; border-radius: 8px; margin-top: 10px; font-size: 14px; color: #2E75B6; }
+        .result-box { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-top: 20px; }
+        .patient-header { background: #f0f7ff; padding: 10px 15px; border-radius: 8px; margin-bottom: 15px; font-size: 15px; }
+        .summary-bar { display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; }
+        .summary-item { padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: bold; }
         .alert-red { border-left: 5px solid #dc3545; }
         .alert-yellow { border-left: 5px solid #ffc107; }
         .alert-green { border-left: 5px solid #28a745; }
@@ -34,27 +39,33 @@
         .badge-green { background: #28a745; color: white; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: bold; }
         .badge-unknown { background: #6c757d; color: white; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: bold; }
         .procedure-result { border: 1px solid #eee; border-radius: 8px; padding: 15px; margin-bottom: 15px; }
-        .procedure-result-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .procedure-result-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; flex-wrap: wrap; gap: 8px; }
         .tooth-badge { background: #e8f4f8; color: #2E75B6; padding: 3px 10px; border-radius: 10px; font-size: 13px; margin-left: 8px; }
-        .requirement { background: #fff3cd; padding: 12px; border-radius: 5px; margin: 8px 0; font-size: 14px; }
-        .frequency { background: #d4edda; padding: 12px; border-radius: 5px; margin: 8px 0; font-size: 14px; }
-        .notes { background: #f8f9fa; padding: 12px; border-radius: 5px; margin: 8px 0; font-size: 14px; }
-        .checklist { background: #e8f4f8; padding: 12px; border-radius: 5px; margin: 8px 0; font-size: 14px; }
+        .requirement { background: #fff3cd; padding: 12px; border-radius: 8px; margin: 8px 0; font-size: 14px; }
+        .frequency { background: #d4edda; padding: 12px; border-radius: 8px; margin: 8px 0; font-size: 14px; }
+        .notes { background: #f8f9fa; padding: 12px; border-radius: 8px; margin: 8px 0; font-size: 14px; }
+        .checklist { background: #e8f4f8; padding: 12px; border-radius: 8px; margin: 8px 0; font-size: 14px; }
         .checklist ul { margin: 5px 0; padding-left: 20px; }
         .checklist li { margin: 4px 0; }
-        .no-result { background: #f8d7da; padding: 12px; border-radius: 5px; color: #721c24; font-size: 14px; }
-        .summary-bar { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-        .summary-item { padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: bold; }
-        .column-labels { display: flex; gap: 10px; margin-bottom: 5px; }
+        .no-result { background: #f8d7da; padding: 12px; border-radius: 8px; color: #721c24; font-size: 14px; }
+        .column-labels { display: flex; gap: 8px; margin-bottom: 5px; }
         .col-procedure { flex: 2; font-size: 13px; color: #666; font-weight: bold; padding-left: 5px; }
         .col-tooth { flex: 1; font-size: 13px; color: #666; font-weight: bold; padding-left: 5px; }
+
+        @media (max-width: 600px) {
+            .procedure-row { flex-direction: column; }
+            .procedure-row select, .procedure-row input { min-width: 100%; }
+            .btn-row { flex-direction: column; }
+            .add-btn, .voice-btn { min-width: 100%; }
+            .procedure-result-header { flex-direction: column; }
+        }
     </style>
 </head>
 <body>
     <div class="header">
         <h1>🦷 AI Insurance Guardian</h1>
         <div>
-            <span class="user-info">Logged in as: {{ current_user.username }}</span> |
+            <span class="user-info">{{ current_user.username }}</span> |
             <a href="/logout" class="logout">Logout</a>
         </div>
     </div>
@@ -69,10 +80,10 @@
     <div class="form-box">
         <form method="POST" id="main-form">
             <label>Patient Name:</label>
-            <input type="text" name="patient_name" id="patient_name" placeholder="Enter patient name" value="{{ patient_name or '' }}">
+            <input type="text" name="patient_name" placeholder="Enter patient name" value="{{ patient_name or '' }}">
 
             <label>Insurance Carrier:</label>
-            <select name="carrier_id" id="carrier_id">
+            <select name="carrier_id">
                 <option value="">-- Select Carrier --</option>
                 {% for carrier in carriers %}
                 <option value="{{ carrier[0] }}">{{ carrier[1] }}</option>
@@ -82,22 +93,24 @@
             <label>Procedures to Check:</label>
             <div class="column-labels">
                 <div class="col-procedure">Procedure Code</div>
-                <div class="col-tooth">Tooth Number</div>
+                <div class="col-tooth">Tooth #</div>
             </div>
             <div id="procedures-container">
                 <div class="procedure-row">
-                    <select name="cdt_codes" style="flex:2; margin-bottom:0;">
+                    <select name="cdt_codes">
                         <option value="">-- Select Procedure --</option>
                         {% for proc in procedures %}
                         <option value="{{ proc[0] }}">{{ proc[0] }} - {{ proc[1] }}</option>
                         {% endfor %}
                     </select>
-                    <input type="text" name="tooth_numbers" placeholder="Tooth # (e.g. 14)" style="flex:1; margin-bottom:0;">
+                    <input type="text" name="tooth_numbers" placeholder="e.g. 14">
                 </div>
             </div>
-            <br>
-            <button type="button" class="add-btn" onclick="addProcedure()">+ Add Another Procedure</button>
-            <button type="button" class="voice-btn" onclick="startVoice()">🎤 Listen for Procedures</button>
+
+            <div class="btn-row">
+                <button type="button" class="add-btn" onclick="addProcedure()">+ Add Procedure</button>
+                <button type="button" class="voice-btn" onclick="startVoice()">🎤 Listen</button>
+            </div>
             <div class="voice-result" id="voice-result"></div>
             <button type="submit" class="submit-btn">Check Coverage</button>
         </form>
@@ -105,23 +118,21 @@
 
     {% if results %}
     <div class="result-box">
-        <h2>Coverage Results</h2>
+        <h2 style="color:#2E75B6; margin-bottom:15px;">Coverage Results</h2>
         {% if patient_name %}
-        <div class="patient-header">
-            👤 Patient: <strong>{{ patient_name }}</strong>
-        </div>
+        <div class="patient-header">👤 <strong>{{ patient_name }}</strong></div>
         {% endif %}
 
         <div class="summary-bar">
             {% for r in results %}
             {% if r.alert_level == "red" %}
-            <span class="summary-item badge-red">⚠️ {{ r.cdt_code }}{% if r.tooth %} #{{ r.tooth }}{% endif %} — Pre-Auth Required</span>
+            <span class="summary-item badge-red">⚠️ {{ r.cdt_code }}{% if r.tooth %} #{{ r.tooth }}{% endif %}</span>
             {% elif r.alert_level == "yellow" %}
-            <span class="summary-item badge-yellow">⚡ {{ r.cdt_code }}{% if r.tooth %} #{{ r.tooth }}{% endif %} — Docs Needed</span>
+            <span class="summary-item badge-yellow">⚡ {{ r.cdt_code }}{% if r.tooth %} #{{ r.tooth }}{% endif %}</span>
             {% elif r.alert_level == "green" %}
-            <span class="summary-item badge-green">✅ {{ r.cdt_code }}{% if r.tooth %} #{{ r.tooth }}{% endif %} — Looks Good</span>
+            <span class="summary-item badge-green">✅ {{ r.cdt_code }}{% if r.tooth %} #{{ r.tooth }}{% endif %}</span>
             {% else %}
-            <span class="summary-item badge-unknown">❓ {{ r.cdt_code }}{% if r.tooth %} #{{ r.tooth }}{% endif %} — Verify</span>
+            <span class="summary-item badge-unknown">❓ {{ r.cdt_code }}{% if r.tooth %} #{{ r.tooth }}{% endif %}</span>
             {% endif %}
             {% endfor %}
         </div>
@@ -146,18 +157,12 @@
             </div>
 
             {% if r.result %}
-            <div class="requirement">
-                <strong>📋 Required:</strong> {{ r.result[2] }}
-            </div>
+            <div class="requirement"><strong>📋 Required:</strong> {{ r.result[2] }}</div>
             {% if r.result[3] and r.result[3] > 0 %}
-            <div class="frequency">
-                <strong>📅 Frequency Limit:</strong> {{ r.result[3] }} year(s)
-            </div>
+            <div class="frequency"><strong>📅 Frequency Limit:</strong> {{ r.result[3] }} year(s)</div>
             {% endif %}
             {% if r.result[4] %}
-            <div class="notes">
-                <strong>⚠️ Notes:</strong> {{ r.result[4] }}
-            </div>
+            <div class="notes"><strong>⚠️ Notes:</strong> {{ r.result[4] }}</div>
             {% endif %}
             <div class="checklist">
                 <strong>✅ Capture Before Proceeding:</strong>
@@ -180,9 +185,7 @@
                 </ul>
             </div>
             {% else %}
-            <div class="no-result">
-                ❓ No specific coverage rules found. Verify directly with carrier.
-            </div>
+            <div class="no-result">❓ No specific coverage rules found. Verify directly with carrier.</div>
             {% endif %}
         </div>
         {% endfor %}
@@ -195,14 +198,14 @@
             const row = document.createElement('div');
             row.className = 'procedure-row';
             row.innerHTML = `
-                <select name="cdt_codes" style="flex:2; margin-bottom:0;">
+                <select name="cdt_codes">
                     <option value="">-- Select Procedure --</option>
                     {% for proc in procedures %}
                     <option value="{{ proc[0] }}">{{ proc[0] }} - {{ proc[1] }}</option>
                     {% endfor %}
                 </select>
-                <input type="text" name="tooth_numbers" placeholder="Tooth # (e.g. 14)" style="flex:1; margin-bottom:0;">
-                <button type="button" class="remove-btn" onclick="this.parentElement.remove()">Remove</button>
+                <input type="text" name="tooth_numbers" placeholder="e.g. 14">
+                <button type="button" class="remove-btn" onclick="this.parentElement.remove()">✕</button>
             `;
             container.appendChild(row);
         }
@@ -232,41 +235,21 @@
 
                 const textLower = text.toLowerCase();
                 const cdtMap = {
-    'completely bony': 'D7240',
-    'complete bony': 'D7240',
-    'partially bony': 'D7230',
-    'partial bony': 'D7230',
-    'bony impaction': 'D7230',
-    'boney impaction': 'D7230',
-    'partial boney': 'D7230',
-    'impaction': 'D7230',
-    'crown': 'D2740',
-    'buildup': 'D2950',
-    'root canal': 'D3330',
-    'surgical extraction': 'D7210',
-    'extraction': 'D7140',
-    'srp': 'D4341',
-    'scaling': 'D4341',
-    'deep cleaning': 'D4341',
-    'prophylaxis': 'D1110',
-    'cleaning': 'D1110',
-    'sealant': 'D1351',
-    'implant': 'D6010',
-    'full denture': 'D5110',
-    'complete denture': 'D5110',
-    'denture': 'D5110',
-    'partial denture': 'D5211',
-    'filling': 'D2393',
-    'composite': 'D2393',
-    'amalgam': 'D2160',
-    'panoramic': 'D0330',
-    'bitewing': 'D0274',
-    'bridge': 'D6240',
-    'buildup': 'D2950',
-    'bone graft': 'D7950',
-    'gingivectomy': 'D4210',
-    'osseous': 'D4260',
-};
+                    'completely bony': 'D7240', 'complete bony': 'D7240',
+                    'partially bony': 'D7230', 'partial bony': 'D7230',
+                    'bony impaction': 'D7230', 'boney impaction': 'D7230',
+                    'partial boney': 'D7230', 'impaction': 'D7230',
+                    'crown': 'D2740', 'buildup': 'D2950', 'root canal': 'D3330',
+                    'surgical extraction': 'D7210', 'extraction': 'D7140',
+                    'srp': 'D4341', 'scaling': 'D4341', 'deep cleaning': 'D4341',
+                    'prophylaxis': 'D1110', 'cleaning': 'D1110',
+                    'sealant': 'D1351', 'implant': 'D6010',
+                    'full denture': 'D5110', 'complete denture': 'D5110', 'denture': 'D5110',
+                    'partial denture': 'D5211', 'filling': 'D2393',
+                    'composite': 'D2393', 'amalgam': 'D2160',
+                    'panoramic': 'D0330', 'bitewing': 'D0274', 'bridge': 'D6240',
+                    'bone graft': 'D7950', 'gingivectomy': 'D4210', 'osseous': 'D4260'
+                };
 
                 let detectedCode = null;
                 for (const [keyword, code] of Object.entries(cdtMap)) {
@@ -288,20 +271,20 @@
                     if (toothInput) toothInput.value = toothNumber;
                 }
 
-                btn.textContent = "🎤 Listen for Procedures";
+                btn.textContent = "🎤 Listen";
                 btn.style.backgroundColor = "#6f42c1";
                 btn.disabled = false;
             };
 
             recognition.onerror = function(event) {
                 alert("Voice error: " + event.error);
-                btn.textContent = "🎤 Listen for Procedures";
+                btn.textContent = "🎤 Listen";
                 btn.style.backgroundColor = "#6f42c1";
                 btn.disabled = false;
             };
 
             recognition.onend = function() {
-                btn.textContent = "🎤 Listen for Procedures";
+                btn.textContent = "🎤 Listen";
                 btn.style.backgroundColor = "#6f42c1";
                 btn.disabled = false;
             };
