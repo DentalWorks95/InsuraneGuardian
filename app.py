@@ -222,6 +222,23 @@ def upload():
     carriers = get_carriers()
     procedures = get_procedures()
     return render_template("upload.html", result=result, carriers=carriers, procedures=procedures)
+@app.route("/dashboard")
+@login_required
+def dashboard():
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(*) FROM audit_log WHERE action = 'COVERAGE_CHECK'")
+    total_checks = cursor.fetchone()[0]
+    cursor.execute("SELECT COUNT(*) FROM audit_log WHERE action = 'COVERAGE_CHECK' AND details LIKE '%Alert: red%'")
+    total_red = cursor.fetchone()[0]
+    cursor.execute("SELECT COUNT(*) FROM audit_log WHERE action = 'COVERAGE_CHECK' AND details LIKE '%Alert: yellow%'")
+    total_yellow = cursor.fetchone()[0]
+    cursor.execute("SELECT COUNT(*) FROM audit_log WHERE action = 'COVERAGE_CHECK' AND details LIKE '%Alert: green%'")
+    total_green = cursor.fetchone()[0]
+    cursor.execute("SELECT * FROM audit_log WHERE action = 'COVERAGE_CHECK' ORDER BY timestamp DESC LIMIT 10")
+    recent_checks = cursor.fetchall()
+    conn.close()
+    return render_template("dashboard.html", total_checks=total_checks, total_red=total_red, total_yellow=total_yellow, total_green=total_green, recent_checks=recent_checks)
 if __name__ == "__main__":
     init_users_table()
     app.run(debug=True, host="0.0.0.0", port=5000)

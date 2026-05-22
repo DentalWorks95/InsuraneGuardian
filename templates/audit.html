@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Insurance Guardian - Audit Log</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, sans-serif; background-color: #f5f5f5; padding: 15px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+        h1 { color: #2E75B6; font-size: clamp(20px, 4vw, 28px); }
+        .nav { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
+        .nav a { color: #2E75B6; text-decoration: none; font-size: 14px; background: white; padding: 8px 14px; border-radius: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+        .nav a:hover { background: #2E75B6; color: white; }
+        .user-info { color: #666; font-size: 13px; }
+        .logout { color: #2E75B6; text-decoration: none; font-size: 13px; }
+        .results-box { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .results-box h2 { color: #2E75B6; margin-bottom: 15px; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th { background: #2E75B6; color: white; padding: 10px; text-align: left; }
+        td { padding: 10px; border-bottom: 1px solid #eee; }
+        tr:hover { background: #f5f5f5; }
+        .action-login { color: #28a745; font-weight: bold; }
+        .action-logout { color: #6c757d; font-weight: bold; }
+        .action-check { color: #2E75B6; font-weight: bold; }
+        .action-failed { color: #dc3545; font-weight: bold; }
+        @media (max-width: 600px) {
+            table { font-size: 12px; }
+            th, td { padding: 8px 5px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🦷 AI Insurance Guardian</h1>
+        <div>
+            <span class="user-info">{{ current_user.username }}</span> |
+            <a href="/logout" class="logout">Logout</a>
+        </div>
+    </div>
+    <div class="nav">
+        <a href="/dashboard">📊 Dashboard</a>
+        <a href="/">🔍 Coverage Check</a>
+        <a href="/upload">📷 Image Upload</a>
+        <a href="/history">📋 Patient History</a>
+        <a href="/audit">🔒 Audit Log</a>
+    </div>
+    <div class="results-box">
+        <h2>🔒 Audit Log — Last 100 Actions</h2>
+        <table>
+            <tr>
+                <th>Timestamp</th>
+                <th>User</th>
+                <th>Action</th>
+                <th>Details</th>
+            </tr>
+            {% for record in records %}
+            <tr>
+                <td>{{ record[4] }}</td>
+                <td>{{ record[1] }}</td>
+                <td>
+                    {% if record[2] == 'LOGIN' %}<span class="action-login">LOGIN</span>
+                    {% elif record[2] == 'LOGOUT' %}<span class="action-logout">LOGOUT</span>
+                    {% elif record[2] == 'COVERAGE_CHECK' %}<span class="action-check">COVERAGE CHECK</span>
+                    {% elif record[2] == 'FAILED_LOGIN' %}<span class="action-failed">FAILED LOGIN</span>
+                    {% else %}{{ record[2] }}{% endif %}
+                </td>
+                <td>{{ record[3] }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</body>
+</html>

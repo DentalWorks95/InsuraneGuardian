@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Insurance Guardian - Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, sans-serif; background-color: #f5f5f5; padding: 15px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+        h1 { color: #2E75B6; font-size: clamp(20px, 4vw, 28px); }
+        .nav { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
+        .nav a { color: #2E75B6; text-decoration: none; font-size: 14px; background: white; padding: 8px 14px; border-radius: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+        .nav a:hover { background: #2E75B6; color: white; }
+        .nav a.active { background: #2E75B6; color: white; }
+        .user-info { color: #666; font-size: 13px; }
+        .logout { color: #2E75B6; text-decoration: none; font-size: 13px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .stat-card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); text-align: center; }
+        .stat-number { font-size: 48px; font-weight: bold; margin-bottom: 5px; }
+        .stat-label { color: #666; font-size: 14px; }
+        .stat-total .stat-number { color: #2E75B6; }
+        .stat-red .stat-number { color: #dc3545; }
+        .stat-yellow .stat-number { color: #ffc107; }
+        .stat-green .stat-number { color: #28a745; }
+        .section-box { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .section-box h2 { color: #2E75B6; margin-bottom: 15px; font-size: 18px; }
+        .progress-bar-container { margin-bottom: 15px; }
+        .progress-label { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 14px; }
+        .progress-bar { height: 20px; border-radius: 10px; background: #f0f0f0; overflow: hidden; }
+        .progress-fill-red { height: 100%; background: #dc3545; border-radius: 10px; }
+        .progress-fill-yellow { height: 100%; background: #ffc107; border-radius: 10px; }
+        .progress-fill-green { height: 100%; background: #28a745; border-radius: 10px; }
+        .recent-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        .recent-table th { background: #2E75B6; color: white; padding: 10px; text-align: left; }
+        .recent-table td { padding: 10px; border-bottom: 1px solid #eee; }
+        .recent-table tr:hover { background: #f5f5f5; }
+        .badge-red { background: #dc3545; color: white; padding: 3px 8px; border-radius: 10px; font-size: 12px; }
+        .badge-yellow { background: #ffc107; color: #333; padding: 3px 8px; border-radius: 10px; font-size: 12px; }
+        .badge-green { background: #28a745; color: white; padding: 3px 8px; border-radius: 10px; font-size: 12px; }
+        .welcome-box { background: linear-gradient(135deg, #2E75B6, #1F5A9E); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+        .welcome-box h2 { font-size: 20px; margin-bottom: 5px; }
+        .welcome-box p { font-size: 14px; opacity: 0.9; }
+        @media (max-width: 600px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .recent-table { font-size: 12px; }
+            .recent-table th, .recent-table td { padding: 8px 5px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🦷 AI Insurance Guardian</h1>
+        <div>
+            <span class="user-info">{{ current_user.username }}</span> |
+            <a href="/logout" class="logout">Logout</a>
+        </div>
+    </div>
+
+    <div class="nav">
+        <a href="/dashboard" class="active">📊 Dashboard</a>
+        <a href="/">🔍 Coverage Check</a>
+        <a href="/upload">📷 Image Upload</a>
+        <a href="/history">📋 Patient History</a>
+        <a href="/audit">🔒 Audit Log</a>
+    </div>
+
+    <div class="welcome-box">
+        <h2>Welcome back, {{ current_user.username }}! 👋</h2>
+        <p>Here's your practice overview for AI Insurance Guardian.</p>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card stat-total">
+            <div class="stat-number">{{ total_checks }}</div>
+            <div class="stat-label">Total Coverage Checks</div>
+        </div>
+        <div class="stat-card stat-red">
+            <div class="stat-number">{{ total_red }}</div>
+            <div class="stat-label">⚠️ Pre-Auth Required</div>
+        </div>
+        <div class="stat-card stat-yellow">
+            <div class="stat-number">{{ total_yellow }}</div>
+            <div class="stat-label">⚡ Docs Needed</div>
+        </div>
+        <div class="stat-card stat-green">
+            <div class="stat-number">{{ total_green }}</div>
+            <div class="stat-label">✅ Looks Good</div>
+        </div>
+    </div>
+
+    {% if total_checks > 0 %}
+    <div class="section-box">
+        <h2>📊 Alert Distribution</h2>
+        <div class="progress-bar-container">
+            <div class="progress-label">
+                <span>⚠️ Pre-Auth Required</span>
+                <span>{{ total_red }} ({{ ((total_red / total_checks) * 100)|round(1) }}%)</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill-red" style="width: {{ ((total_red / total_checks) * 100)|round(1) }}%"></div>
+            </div>
+        </div>
+        <div class="progress-bar-container">
+            <div class="progress-label">
+                <span>⚡ Documentation Needed</span>
+                <span>{{ total_yellow }} ({{ ((total_yellow / total_checks) * 100)|round(1) }}%)</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill-yellow" style="width: {{ ((total_yellow / total_checks) * 100)|round(1) }}%"></div>
+            </div>
+        </div>
+        <div class="progress-bar-container">
+            <div class="progress-label">
+                <span>✅ Looks Good</span>
+                <span>{{ total_green }} ({{ ((total_green / total_checks) * 100)|round(1) }}%)</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill-green" style="width: {{ ((total_green / total_checks) * 100)|round(1) }}%"></div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="section-box">
+        <h2>🕐 Recent Coverage Checks</h2>
+        {% if recent_checks %}
+        <table class="recent-table">
+            <tr>
+                <th>Time</th>
+                <th>User</th>
+                <th>Details</th>
+                <th>Alert</th>
+            </tr>
+            {% for record in recent_checks %}
+            <tr>
+                <td>{{ record[4] }}</td>
+                <td>{{ record[1] }}</td>
+                <td>{{ record[3][:50] }}...</td>
+                <td>
+                    {% if 'Alert: red' in record[3] %}
+                    <span class="badge-red">⚠️ Pre-Auth</span>
+                    {% elif 'Alert: yellow' in record[3] %}
+                    <span class="badge-yellow">⚡ Docs</span>
+                    {% elif 'Alert: green' in record[3] %}
+                    <span class="badge-green">✅ Good</span>
+                    {% else %}
+                    —
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% else %}
+        <p style="color:#666; text-align:center; padding:20px;">No coverage checks yet. Start by checking a patient's coverage!</p>
+        {% endif %}
+    </div>
+
+</body>
+</html>
