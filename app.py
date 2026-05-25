@@ -239,6 +239,23 @@ def dashboard():
     recent_checks = cursor.fetchall()
     conn.close()
     return render_template("dashboard.html", total_checks=total_checks, total_red=total_red, total_yellow=total_yellow, total_green=total_green, recent_checks=recent_checks)
+@app.route("/reports")
+@login_required
+def reports():
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(*) FROM audit_log WHERE action = 'COVERAGE_CHECK'")
+    total_checks = cursor.fetchone()[0]
+    cursor.execute("SELECT COUNT(*) FROM audit_log WHERE action = 'COVERAGE_CHECK' AND details LIKE '%Alert: red%'")
+    total_red = cursor.fetchone()[0]
+    cursor.execute("SELECT COUNT(*) FROM audit_log WHERE action = 'COVERAGE_CHECK' AND details LIKE '%Alert: yellow%'")
+    total_yellow = cursor.fetchone()[0]
+    cursor.execute("SELECT COUNT(*) FROM audit_log WHERE action = 'COVERAGE_CHECK' AND details LIKE '%Alert: green%'")
+    total_green = cursor.fetchone()[0]
+    avg_denial_cost = 850
+    estimated_savings = (total_red + total_yellow) * avg_denial_cost
+    conn.close()
+    return render_template("reports.html", total_checks=total_checks, total_red=total_red, total_yellow=total_yellow, total_green=total_green, estimated_savings=estimated_savings, avg_denial_cost=avg_denial_cost)
 if __name__ == "__main__":
     init_users_table()
     app.run(debug=True, host="0.0.0.0", port=5000)
