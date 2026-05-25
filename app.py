@@ -256,6 +256,45 @@ def reports():
     estimated_savings = (total_red + total_yellow) * avg_denial_cost
     conn.close()
     return render_template("reports.html", total_checks=total_checks, total_red=total_red, total_yellow=total_yellow, total_green=total_green, estimated_savings=estimated_savings, avg_denial_cost=avg_denial_cost)
+@app.route("/users", methods=["GET", "POST"])
+@login_required
+def users():
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, username, role FROM users")
+    all_users = cursor.fetchall()
+    conn.close()
+    return render_template("users.html", all_users=all_users)
+
+
+@app.route("/users/add", methods=["POST"])
+@login_required
+def add_user():
+    username = request.form.get("username")
+    password = request.form.get("password")
+    role = request.form.get("role", "staff")
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("INSERT OR IGNORE INTO users (username, password, role) VALUES (?, ?, ?)", (username, generate_password_hash(password), role))
+    conn.commit()
+    conn.close()
+    log_action(current_user.username, "ADD_USER", f"Added user: {username} with role: {role}")
+    return redirect(url_for("users"))
+
+
+@app.route("/users/delete/<int:user_id>", methods=["POST"])
+@login_required
+def delete_user(user_id):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT username FROM users WHERE id = ?", (user_id,))
+    user = cursor.fetchone()
+    if user and user[0] != "admin":
+        cursor.execute("DELETE FROM users WHERE id = ?", (user_id,))
+        conn.commit()
+        log_action(current_user.username, "DELETE_USER", f"Deleted user: {user[0]}")
+    conn.close()
+    return redirect(url_for("users"))
 if __name__ == "__main__":
     init_users_table()
     app.run(debug=True, host="0.0.0.0", port=5000)

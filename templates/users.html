@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Insurance Guardian - User Management</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, sans-serif; background-color: #f5f5f5; padding: 15px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+        h1 { color: #2E75B6; font-size: clamp(20px, 4vw, 28px); }
+        .nav { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
+        .nav a { color: #2E75B6; text-decoration: none; font-size: 14px; background: white; padding: 8px 14px; border-radius: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+        .nav a:hover { background: #2E75B6; color: white; }
+        .nav a.active { background: #2E75B6; color: white; }
+        .user-info { color: #666; font-size: 13px; }
+        .logout { color: #2E75B6; text-decoration: none; font-size: 13px; }
+        .form-box { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .form-box h2 { color: #2E75B6; margin-bottom: 15px; font-size: 18px; }
+        label { font-weight: bold; display: block; margin-bottom: 5px; color: #333; font-size: 14px; margin-top: 12px; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; }
+        .add-btn { background: #28a745; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 15px; cursor: pointer; width: 100%; margin-top: 15px; }
+        .add-btn:hover { background: #1e7e34; }
+        .users-box { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .users-box h2 { color: #2E75B6; margin-bottom: 15px; font-size: 18px; }
+        .user-row { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #eee; flex-wrap: wrap; gap: 10px; }
+        .user-row:last-child { border-bottom: none; }
+        .user-info-row { display: flex; align-items: center; gap: 12px; }
+        .user-avatar { width: 40px; height: 40px; border-radius: 50%; background: #2E75B6; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; }
+        .user-name { font-weight: bold; font-size: 15px; }
+        .user-role { font-size: 13px; color: #666; }
+        .role-admin { background: #2E75B6; color: white; padding: 3px 10px; border-radius: 10px; font-size: 12px; }
+        .role-staff { background: #6c757d; color: white; padding: 3px 10px; border-radius: 10px; font-size: 12px; }
+        .delete-btn { background: #dc3545; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-size: 13px; cursor: pointer; }
+        .delete-btn:hover { background: #c82333; }
+        .protected { color: #999; font-size: 13px; font-style: italic; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🦷 AI Insurance Guardian</h1>
+        <div>
+            <span class="user-info">{{ current_user.username }}</span> |
+            <a href="/logout" class="logout">Logout</a>
+        </div>
+    </div>
+
+    <div class="nav">
+        <a href="/dashboard">📊 Dashboard</a>
+        <a href="/">🔍 Coverage Check</a>
+        <a href="/upload">📷 Image Upload</a>
+        <a href="/history">📋 Patient History</a>
+        <a href="/audit">🔒 Audit Log</a>
+        <a href="/reports">📈 Reports</a>
+        <a href="/users" class="active">👥 Users</a>
+    </div>
+
+    <div class="form-box">
+        <h2>➕ Add New User</h2>
+        <form method="POST" action="/users/add">
+            <label>Username:</label>
+            <input type="text" name="username" placeholder="Enter username" required>
+
+            <label>Password:</label>
+            <input type="password" name="password" placeholder="Enter password" required>
+
+            <label>Role:</label>
+            <select name="role">
+                <option value="staff">Staff</option>
+                <option value="admin">Admin</option>
+            </select>
+
+            <button type="submit" class="add-btn">➕ Add User</button>
+        </form>
+    </div>
+
+    <div class="users-box">
+        <h2>👥 Current Users ({{ all_users|length }})</h2>
+        {% for user in all_users %}
+        <div class="user-row">
+            <div class="user-info-row">
+                <div class="user-avatar">{{ user[1][0]|upper }}</div>
+                <div>
+                    <div class="user-name">{{ user[1] }}</div>
+                    <div class="user-role">
+                        {% if user[2] == 'admin' %}
+                        <span class="role-admin">Admin</span>
+                        {% else %}
+                        <span class="role-staff">Staff</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% if user[1] != 'admin' %}
+            <form method="POST" action="/users/delete/{{ user[0] }}" onsubmit="return confirm('Delete user {{ user[1] }}?')">
+                <button type="submit" class="delete-btn">🗑️ Delete</button>
+            </form>
+            {% else %}
+            <span class="protected">🔒 Protected</span>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+</body>
+</html>
