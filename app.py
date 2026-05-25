@@ -295,6 +295,40 @@ def delete_user(user_id):
         log_action(current_user.username, "DELETE_USER", f"Deleted user: {user[0]}")
     conn.close()
     return redirect(url_for("users"))
+@app.route("/billing")
+@login_required
+def billing():
+    return render_template("billing.html")
+
+
+@app.route("/create-checkout-session", methods=["POST"])
+@login_required
+def create_checkout_session():
+    import stripe
+    from dotenv import load_dotenv
+    import os
+    load_dotenv()
+    stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
+    plan = request.form.get("plan", "monthly")
+    prices = {"monthly": 29900, "annual": 299900}
+    price = prices.get(plan, 9900)
+    session = stripe.checkout.Session.create(
+        payment_method_types=["card"],
+        line_items=[{
+            "price_data": {
+                "currency": "usd",
+                "product_data": {"name": f"AI Insurance Guardian — {plan.capitalize()} Plan"},
+                "unit_amount": price,
+                "recurring": {"interval": "month" if plan == "monthly" else "year"},
+            },
+            "quantity": 1,
+        }],
+        mode="subscription",
+        success_url="http://127.0.0.1:5000/billing?success=true",
+        cancel_url="http://127.0.0.1:5000/billing?cancelled=true",
+    )
+    from flask import jsonify
+    return jsonify({"url": session.url})
 if __name__ == "__main__":
     init_users_table()
     app.run(debug=True, host="0.0.0.0", port=5000)
