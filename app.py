@@ -329,6 +329,21 @@ def create_checkout_session():
     )
     from flask import jsonify
     return jsonify({"url": session.url})
+@app.route("/opendental", methods=["GET", "POST"])
+@login_required
+def opendental():
+    from opendental import test_connection, search_patients
+    connection_status = test_connection()
+    patients = []
+    search_name = None
+    if request.method == "POST":
+        search_name = request.form.get("search_name")
+        if search_name:
+            result = search_patients(search_name)
+            if result["success"]:
+                patients = result["data"]
+            log_action(current_user.username, "OPENDENTAL_SEARCH", f"Searched for patient: {search_name}")
+    return render_template("opendental.html", connection_status=connection_status, patients=patients, search_name=search_name)
 if __name__ == "__main__":
     init_users_table()
     app.run(debug=True, host="0.0.0.0", port=5000)
