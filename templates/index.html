@@ -114,8 +114,9 @@
 
             <div class="btn-row">
                 <button type="button" class="add-btn" onclick="addProcedure()">+ Add Procedure</button>
-                <button type="button" class="voice-btn" onclick="startVoice()">🎤 Listen</button>
+                <button type="button" class="voice-btn" id="always-on-btn" onclick="toggleListening()">🎤 Start Listening</button>
             </div>
+            <div id="charting-status" style="display:none; padding:10px; border-radius:8px; margin-top:10px; font-size:14px;"></div>
             <div class="voice-result" id="voice-result"></div>
             <button type="submit" class="submit-btn">Check Coverage</button>
         </form>
@@ -197,103 +198,292 @@
     </div>
     {% endif %}
 
-    <script>
-        function addProcedure() {
-            const container = document.getElementById('procedures-container');
-            const row = document.createElement('div');
-            row.className = 'procedure-row';
-            row.innerHTML = `
-                <select name="cdt_codes">
-                    <option value="">-- Select Procedure --</option>
-                    {% for proc in procedures %}
-                    <option value="{{ proc[0] }}">{{ proc[0] }} - {{ proc[1] }}</option>
-                    {% endfor %}
-                </select>
-                <input type="text" name="tooth_numbers" placeholder="e.g. 14">
-                <button type="button" class="remove-btn" onclick="this.parentElement.remove()">✕</button>
-            `;
-            container.appendChild(row);
+<script>
+    let isChartingMode = false;
+    let recognition = null;
+    let isListening = false;
+
+    const ACTIVATION_PHRASE = "begin charting";
+    const DEACTIVATION_PHRASE = "stop charting";
+
+    const DENTAL_TRIGGERS = {
+        'completely bony': 'D7240', 'complete bony': 'D7240',
+        'partially bony': 'D7230', 'partial bony': 'D7230',
+        'bony impaction': 'D7230', 'boney impaction': 'D7230',
+        'impaction': 'D7230',
+        'crown': 'D2740', 'buildup': 'D2950',
+        'root canal molar': 'D3330', 'root canal premolar': 'D3320',
+        'root canal anterior': 'D3310', 'root canal': 'D3330',
+        'surgical extraction': 'D7210', 'extraction': 'D7140',
+        'srp': 'D4341', 'scaling root planing': 'D4341',
+        'deep cleaning': 'D4341', 'scaling': 'D4341',
+        'prophylaxis': 'D1110', 'prophy': 'D1110', 'cleaning': 'D1110',
+        'sealant': 'D1351', 'implant': 'D6010',
+        'full denture': 'D5110', 'complete denture': 'D5110', 'denture': 'D5110',
+        'partial denture': 'D5211',
+        'composite filling': 'D2393', 'composite': 'D2393',
+        'amalgam filling': 'D2160', 'amalgam': 'D2160',
+        'modb': 'D2394', 'modbl': 'D2394', 'modb filling': 'D2394','dobl': 'D2394', 'd o b l': 'D2394', 'mobl': 'D2394', 'm o b l': 'D2394', 'molb': 'D2394', 'dobf': 'D2394', 'distal occlusal buccal lingual': 'D2394', 'mesial occlusal buccal lingual': 'D2394',
+        'mod': 'D2393', 'mod filling': 'D2393', 'mesial occlusal distal': 'D2393',
+        'mesio occlusal distal': 'D2393',
+
+        'mo': 'D2392', 'mo filling': 'D2392',
+        'mesio occlusal': 'D2392', 'mesial occlusal': 'D2392',
+        'do': 'D2392', 'do filling': 'D2392',
+        'disto occlusal': 'D2392', 'distal occlusal': 'D2392',
+        'ob': 'D2392', 'ob filling': 'D2392',
+        'occluso buccal': 'D2392', 'occlusal buccal': 'D2392',
+        'ol': 'D2392', 'ol filling': 'D2392',
+        'occluso lingual': 'D2392', 'occlusal lingual': 'D2392',
+        'mb': 'D2392', 'mb filling': 'D2392',
+        'mesio buccal': 'D2392', 'mesial buccal': 'D2392',
+        'db': 'D2392', 'db filling': 'D2392',
+        'disto buccal': 'D2392', 'distal buccal': 'D2392',
+        'ml': 'D2392', 'ml filling': 'D2392',
+        'mesio lingual': 'D2392', 'mesial lingual': 'D2392',
+        'dl': 'D2392', 'dl filling': 'D2392',
+        'disto lingual': 'D2392', 'distal lingual': 'D2392',
+        'bl': 'D2392', 'bl filling': 'D2392',
+        'bucco lingual': 'D2392', 'buccal lingual': 'D2392',
+        'mf': 'D2392', 'df': 'D2392',
+        'mesio facial': 'D2392', 'disto facial': 'D2392',
+        'two surface filling': 'D2392', 'two surface composite': 'D2392',
+
+        'occlusal filling': 'D2391', 'occlusal composite': 'D2391',
+        'buccal filling': 'D2391', 'buccal composite': 'D2391',
+        'lingual filling': 'D2391', 'lingual composite': 'D2391',
+        'facial filling': 'D2391', 'facial composite': 'D2391',
+        'mesial filling': 'D2391', 'mesial composite': 'D2391',
+        'distal filling': 'D2391', 'distal composite': 'D2391',
+        'incisal filling': 'D2331', 'incisal composite': 'D2331',
+        'one surface filling': 'D2391', 'single surface filling': 'D2391',
+
+        'modb filling': 'D2394', 'four surface filling': 'D2394',
+        'five surface filling': 'D2394', 'four surface composite': 'D2394',
+
+        'amalgam mod': 'D2160', 'amalgam three surface': 'D2160',
+        'amalgam two surface': 'D2150', 'amalgam one surface': 'D2140',
+        'amalgam': 'D2160',
+        'composite': 'D2393',
+        'filling': 'D2391',
+        'panoramic': 'D0330', 'pano': 'D0330',
+        'bitewing': 'D0274', 'bitewings': 'D0274',
+        'periapical': 'D0220', 'pa': 'D0220',
+        'bridge': 'D6240', 'pontic': 'D6240',
+        'bone graft': 'D7950',
+        'gingivectomy': 'D4210',
+        'osseous surgery': 'D4260',
+        'core buildup': 'D2950',
+        'onlay': 'D2642', 'inlay': 'D2610',
+        'veneer': 'D2960',
+        'pulpotomy': 'D3220',
+        'apicoectomy': 'D3410',
+        'debridement': 'D4355',
+        'periodontal maintenance': 'D4910',
+        'perio maintenance': 'D4910'
+    };
+
+    const CLINICAL_KEYWORDS = [
+        'tooth', 'teeth', 'molar', 'premolar', 'bicuspid', 'incisor',
+        'canine', 'cuspid', 'occlusal', 'mesial', 'distal', 'buccal',
+        'lingual', 'facial', 'palatal', 'interproximal', 'cervical',
+        'cusp', 'fracture', 'decay', 'caries', 'cavity', 'bone loss',
+        'recession', 'pocket', 'bleeding', 'calculus', 'plaque',
+        'periapical', 'abscess', 'pulp', 'nerve', 'root', 'crown',
+        'restoration', 'filling', 'number', 'upper', 'lower',
+        'maxillary', 'mandibular', 'anterior', 'posterior', 'quadrant'
+    ];
+
+    function isClinicalSpeech(text) {
+        const lower = text.toLowerCase();
+        return CLINICAL_KEYWORDS.some(keyword => lower.includes(keyword)) ||
+               Object.keys(DENTAL_TRIGGERS).some(trigger => lower.includes(trigger));
+    }
+
+    function updateStatus() {
+        const statusDiv = document.getElementById('charting-status');
+        const voiceResult = document.getElementById('voice-result');
+        if (isChartingMode) {
+            statusDiv.innerHTML = '🟢 <strong>Charting Mode ACTIVE</strong> — Listening for dental procedures... Say "Stop charting" to deactivate.';
+            statusDiv.style.background = '#d4edda';
+            statusDiv.style.color = '#155724';
+            statusDiv.style.display = 'block';
+        } else if (isListening) {
+            statusDiv.innerHTML = '🎤 <strong>Standby</strong> — Say "Begin charting" to activate NLP mode.';
+            statusDiv.style.background = '#fff3cd';
+            statusDiv.style.color = '#856404';
+            statusDiv.style.display = 'block';
+        } else {
+            statusDiv.innerHTML = '';
+            statusDiv.style.display = 'none';
+        }
+    }
+
+    function processTranscript(text) {
+        const lower = text.toLowerCase();
+        const voiceResult = document.getElementById('voice-result');
+
+        if (lower.includes(ACTIVATION_PHRASE)) {
+            isChartingMode = true;
+            voiceResult.textContent = '✅ Charting mode activated — now listening for dental procedures.';
+            voiceResult.style.display = 'block';
+            updateStatus();
+            return;
         }
 
-        function startVoice() {
-            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-                alert("Voice recognition requires Chrome browser.");
-                return;
+        if (lower.includes(DEACTIVATION_PHRASE)) {
+            isChartingMode = false;
+            voiceResult.textContent = '⏹️ Charting mode deactivated.';
+            voiceResult.style.display = 'block';
+            updateStatus();
+            return;
+        }
+
+        if (!isChartingMode) return;
+
+        if (!isClinicalSpeech(text)) {
+            console.log('Filtered out non-clinical speech:', text);
+            return;
+        }
+
+        voiceResult.textContent = '🎤 Heard: "' + text + '"';
+        voiceResult.style.display = 'block';
+
+        let detectedCode = null;
+        let detectedKeyword = null;
+        for (const [keyword, code] of Object.entries(DENTAL_TRIGGERS)) {
+            if (lower.includes(keyword)) {
+                detectedCode = code;
+                detectedKeyword = keyword;
+                break;
             }
-            const btn = document.querySelector('.voice-btn');
-            btn.textContent = "🎤 Listening...";
-            btn.style.backgroundColor = "#dc3545";
-            btn.disabled = true;
-
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            const recognition = new SpeechRecognition();
-            recognition.lang = 'en-US';
-            recognition.interimResults = false;
-            recognition.maxAlternatives = 1;
-            recognition.start();
-
-            recognition.onresult = function(event) {
-                const text = event.results[0][0].transcript;
-                const voiceResult = document.getElementById('voice-result');
-                voiceResult.textContent = '🎤 Heard: "' + text + '"';
-                voiceResult.style.display = 'block';
-
-                const textLower = text.toLowerCase();
-                const cdtMap = {
-                    'completely bony': 'D7240', 'complete bony': 'D7240',
-                    'partially bony': 'D7230', 'partial bony': 'D7230',
-                    'bony impaction': 'D7230', 'boney impaction': 'D7230',
-                    'partial boney': 'D7230', 'impaction': 'D7230',
-                    'crown': 'D2740', 'buildup': 'D2950', 'root canal': 'D3330',
-                    'surgical extraction': 'D7210', 'extraction': 'D7140',
-                    'srp': 'D4341', 'scaling': 'D4341', 'deep cleaning': 'D4341',
-                    'prophylaxis': 'D1110', 'cleaning': 'D1110',
-                    'sealant': 'D1351', 'implant': 'D6010',
-                    'full denture': 'D5110', 'complete denture': 'D5110', 'denture': 'D5110',
-                    'partial denture': 'D5211', 'filling': 'D2393',
-                    'composite': 'D2393', 'amalgam': 'D2160',
-                    'panoramic': 'D0330', 'bitewing': 'D0274', 'bridge': 'D6240',
-                    'bone graft': 'D7950', 'gingivectomy': 'D4210', 'osseous': 'D4260'
-                };
-
-                let detectedCode = null;
-                for (const [keyword, code] of Object.entries(cdtMap)) {
-                    if (textLower.includes(keyword)) {
-                        detectedCode = code;
-                        break;
-                    }
-                }
-
-                const toothMatch = textLower.match(/(?:tooth\s+(?:number\s+)?|#\s*|number\s+)(\d+)/);
-                const toothNumber = toothMatch ? toothMatch[1] : null;
-
-                if (detectedCode) {
-                    const select = document.querySelector('select[name="cdt_codes"]');
-                    if (select) select.value = detectedCode;
-                }
-                if (toothNumber) {
-                    const toothInput = document.querySelector('input[name="tooth_numbers"]');
-                    if (toothInput) toothInput.value = toothNumber;
-                }
-
-                btn.textContent = "🎤 Listen";
-                btn.style.backgroundColor = "#6f42c1";
-                btn.disabled = false;
-            };
-
-            recognition.onerror = function(event) {
-                alert("Voice error: " + event.error);
-                btn.textContent = "🎤 Listen";
-                btn.style.backgroundColor = "#6f42c1";
-                btn.disabled = false;
-            };
-
-            recognition.onend = function() {
-                btn.textContent = "🎤 Listen";
-                btn.style.backgroundColor = "#6f42c1";
-                btn.disabled = false;
-            };
         }
-    </script>
+
+        const spokenNumbers = {
+    'one':'1','two':'2','three':'3','four':'4','five':'5',
+    'six':'6','seven':'7','eight':'8','nine':'9','ten':'10',
+    'eleven':'11','twelve':'12','thirteen':'13','fourteen':'14',
+    'fifteen':'15','sixteen':'16','seventeen':'17','eighteen':'18',
+    'nineteen':'19','twenty':'20','twenty one':'21','twenty two':'22',
+    'twenty three':'23','twenty four':'24','twenty five':'25',
+    'twenty six':'26','twenty seven':'27','twenty eight':'28',
+    'twenty nine':'29','thirty':'30','thirty one':'31','thirty two':'32'
+};
+let searchText = lower;
+for (const [word, digit] of Object.entries(spokenNumbers)) {
+    searchText = searchText.replace(new RegExp('\\b' + word + '\\b', 'g'), digit);
+}
+const toothMatch = searchText.match(/(?:tooth\s+(?:number\s+)?|#\s*|number\s+|on\s+(?:tooth\s+)?|on\s+)(\d+)/);
+const toothNumber = toothMatch ? toothMatch[1] : null;
+
+        if (detectedCode) {
+            const selects = document.querySelectorAll('select[name="cdt_codes"]');
+            let filled = false;
+            for (const select of selects) {
+                if (!select.value) {
+                    select.value = detectedCode;
+                    filled = true;
+                    break;
+                }
+            }
+            if (!filled) {
+                addProcedure();
+                const newSelects = document.querySelectorAll('select[name="cdt_codes"]');
+                newSelects[newSelects.length - 1].value = detectedCode;
+            }
+        }
+
+        if (toothNumber) {
+            const toothInputs = document.querySelectorAll('input[name="tooth_numbers"]');
+            for (const input of toothInputs) {
+                if (!input.value) {
+                    input.value = toothNumber;
+                    break;
+                }
+            }
+        }
+    }
+
+    function startContinuousListening() {
+        if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+            alert("Voice recognition requires Chrome browser.");
+            return;
+        }
+
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognition = new SpeechRecognition();
+        recognition.lang = 'en-US';
+        recognition.continuous = true;
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+
+        recognition.onresult = function(event) {
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+                if (event.results[i].isFinal) {
+                    const text = event.results[i][0].transcript;
+                    console.log('Recognized:', text);
+                    processTranscript(text);
+                }
+            }
+        };
+
+        recognition.onerror = function(event) {
+            console.log('Speech error:', event.error);
+            if (event.error !== 'no-speech') {
+                setTimeout(startContinuousListening, 1000);
+            }
+        };
+
+        recognition.onend = function() {
+            if (isListening) {
+                setTimeout(() => recognition.start(), 300);
+            }
+        };
+
+        recognition.start();
+        isListening = true;
+        updateStatus();
+    }
+
+    function stopContinuousListening() {
+        isListening = false;
+        isChartingMode = false;
+        if (recognition) {
+            recognition.stop();
+        }
+        updateStatus();
+        const btn = document.getElementById('always-on-btn');
+        btn.textContent = '🎤 Start Listening';
+        btn.style.backgroundColor = '#6f42c1';
+    }
+
+    function toggleListening() {
+        const btn = document.getElementById('always-on-btn');
+        if (!isListening) {
+            startContinuousListening();
+            btn.textContent = '🔴 Stop Listening';
+            btn.style.backgroundColor = '#dc3545';
+        } else {
+            stopContinuousListening();
+        }
+    }
+
+    function addProcedure() {
+        const container = document.getElementById('procedures-container');
+        const row = document.createElement('div');
+        row.className = 'procedure-row';
+        row.innerHTML = `
+            <select name="cdt_codes">
+                <option value="">-- Select Procedure --</option>
+                {% for proc in procedures %}
+                <option value="{{ proc[0] }}">{{ proc[0] }} - {{ proc[1] }}</option>
+                {% endfor %}
+            </select>
+            <input type="text" name="tooth_numbers" placeholder="e.g. 14">
+            <button type="button" class="remove-btn" onclick="this.parentElement.remove()">✕</button>
+        `;
+        container.appendChild(row);
+    }
+</script>
 </body>
 </html>
