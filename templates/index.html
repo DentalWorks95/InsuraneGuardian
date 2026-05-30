@@ -108,7 +108,7 @@
                         {% endfor %}
                     </select>
                     <input type="text" name="tooth_numbers" placeholder="Tooth #">
-                    <input type="text" name="surfaces" placeholder="Surfaces" class="surface-input" readonly>
+                    <input type="text" name="surfaces" placeholder="Surfaces" class="surface-input">
                 </div>
             </div>
 
@@ -195,7 +195,7 @@
     var ABBREVIATIONS = ['midfl','modbl','mifl','difl','midf','midl','mobl','molb','dobl','dolb','modb','modl','mob','dob','mol','dol','mod','mif','dif','mfl','dfl','mil','dil','mid','mi','di','mf','df','ml','dl','mo','do','ob','ol','mb','db','bl'];
     var DENTAL_TRIGGERS = {'completely bony':'D7240','complete bony':'D7240','partially bony':'D7230','partial bony':'D7230','bony impaction':'D7230','boney impaction':'D7230','impaction':'D7230','crown':'D2740','buildup':'D2950','core buildup':'D2950','root canal molar':'D3330','root canal premolar':'D3320','root canal anterior':'D3310','root canal':'D3330','surgical extraction':'D7210','extraction':'D7140','srp':'D4341','scaling root planing':'D4341','deep cleaning':'D4341','scaling':'D4341','prophylaxis':'D1110','prophy':'D1110','sealant':'D1351','implant':'D6010','full denture':'D5110','complete denture':'D5110','denture':'D5110','partial denture':'D5211','panoramic':'D0330','pano':'D0330','bitewing':'D0274','bitewings':'D0274','periapical':'D0220','bridge':'D6240','pontic':'D6240','bone graft':'D7950','gingivectomy':'D4210','osseous surgery':'D4260','onlay':'D2642','inlay':'D2610','veneer':'D2960','pulpotomy':'D3220','apicoectomy':'D3410','debridement':'D4355','periodontal maintenance':'D4910','perio maintenance':'D4910','amalgam':'D2160','filling':'SURFACE_DETECT','composite':'SURFACE_DETECT','restoration':'SURFACE_DETECT'};
     var CLINICAL_KEYWORDS = ['tooth','teeth','molar','premolar','bicuspid','incisor','canine','occlusal','mesial','distal','buccal','lingual','facial','incisal','cusp','fracture','decay','caries','cavity','bone loss','recession','pocket','bleeding','periapical','abscess','pulp','root','crown','filling','composite','amalgam','srp','scaling','prophy','sealant','implant','bridge','extraction','impaction','buildup','mod','mob','dob','mol','dol','modb','modbl','mifl','difl','midf','midl','midfl','mif','dif','mfl','dfl','mil','dil','mid','mo','do','ob','ol','mb','db','bl','ml','dl'];
-    var spokenNumbers = {'one':'1','won':'1','wan':'1','two':'2','to':'2','too':'2','three':'3','tree':'3','free':'3','four':'4','for':'4','fore':'4','five':'5','fife':'5','hive':'5','six':'6','sicks':'6','sick':'6','seven':'7','sevan':'7','severn':'7','eight':'8','ate':'8','ait':'8','nine':'9','mine':'9','nein':'9','ninh':'9','ten':'10','tin':'10','eleven':'11','alevan':'11','twelve':'12','twelv':'12','twelf':'12','thirteen':'13','thirten':'13','fourteen':'14','forteen':'14','fourten':'14','for teen':'14','for ten':'14','fifteen':'15','fiveteen':'15','fiften':'15','sixteen':'16','sixten':'16','seventeen':'17','seveneen':'17','eighteen':'18','eighten':'18','nineteen':'19','ninteen':'19','mineteen':'19','twenty':'20','tweny':'20','twenty one':'21','twenty won':'21','twenty two':'22','twenty too':'22','twenty to':'22','twenty three':'23','twenty tree':'23','twenty four':'24','twenty for':'24','twenty five':'25','twenty fife':'25','twenty six':'26','twenty seven':'27','twenty eight':'28','twenty ate':'28','twenty nine':'29','twenty mine':'29','thirty':'30','thirdy':'30','thirty one':'31','thirty won':'31','thirty two':'32','thirty too':'32','toothache':'8','tooth ache':'8','tooth ate':'8'};
+    var spokenNumbers = {'thirty two':'32','thirty too':'32','thirty one':'31','thirty won':'31','thirty':'30','thirdy':'30','twenty nine':'29','twenty mine':'29','twenty eight':'28','twenty ate':'28','twenty seven':'27','twenty six':'26','twenty five':'25','twenty fife':'25','twenty four':'24','twenty for':'24','twenty three':'23','twenty tree':'23','twenty two':'22','twenty too':'22','twenty to':'22','twenty one':'21','twenty won':'21','twenty':'20','tweny':'20','nineteen':'19','ninteen':'19','mineteen':'19','eighteen':'18','eighten':'18','seventeen':'17','seveneen':'17','sixteen':'16','sixten':'16','fifteen':'15','fiveteen':'15','fiften':'15','fourteen':'14','forteen':'14','fourten':'14','for teen':'14','for ten':'14','thirteen':'13','thirten':'13','twelve':'12','twelv':'12','twelf':'12','eleven':'11','alevan':'11','ten':'10','tin':'10','nine':'9','mine':'9','nein':'9','ninh':'9','eight':'8','ate':'8','ait':'8','toothache':'8','tooth ache':'8','tooth ate':'8','seven':'7','sevan':'7','severn':'7','six':'6','sicks':'6','sick':'6','five':'5','fife':'5','hive':'5','four':'4','for':'4','fore':'4','three':'3','tree':'3','free':'3','two':'2','to':'2','too':'2','tu':'2','one':'1','won':'1','wan':'1'};
 
     function isClinicalSpeech(text) {
         var lower = text.toLowerCase();
@@ -207,7 +207,7 @@
 
     function getToothNumber(text) {
         var lower = text.toLowerCase();
-        var patterns = ['tooth number ','tooth #','tooth ','number ','#'];
+        var patterns = ['tooth number ','tooth #','tooth ','number ','on tooth ','on number ','on #','on ','#'];
         for (var p = 0; p < patterns.length; p++) {
             var idx = lower.indexOf(patterns[p]);
             if (idx !== -1) {
@@ -216,7 +216,7 @@
                 for (var k = 0; k < keys.length; k++) {
                     if (after.indexOf(keys[k]) === 0) return spokenNumbers[keys[k]];
                 }
-                var dm = after.match(/^(\d{1,2})/);
+                var dm = after.match(/^(\d{1,2})(?!\d)/);
                 if (dm) return dm[1];
             }
         }
@@ -249,6 +249,21 @@
         if (ANTERIOR_TEETH.indexOf(tooth) !== -1) return ANTERIOR_MAP[key] || null;
         if (POSTERIOR_TEETH.indexOf(tooth) !== -1) return POSTERIOR_MAP[key] || null;
         return POSTERIOR_MAP[key] || ANTERIOR_MAP[key] || null;
+    }
+
+    function attachSurfaceListener(row) {
+        var tsurf = row.querySelector('input[name="surfaces"]');
+        var tsel = row.querySelector('select[name="cdt_codes"]');
+        var ttooth = row.querySelector('input[name="tooth_numbers"]');
+        if (!tsurf || !tsel) return;
+        tsurf.addEventListener('input', function() {
+            var surfaces = tsurf.value.trim().toUpperCase();
+            if (!surfaces) return;
+            var toothNum = ttooth ? ttooth.value.trim() : null;
+            var newCode = getSurfaceCDT(surfaces, toothNum);
+            if (!newCode) newCode = POSTERIOR_MAP[surfaces.toLowerCase()] || null;
+            if (newCode) tsel.value = newCode;
+        });
     }
 
     function updateStatus() {
@@ -379,9 +394,12 @@
         var container = document.getElementById('procedures-container');
         var row = document.createElement('div');
         row.className = 'procedure-row';
-        row.innerHTML = '<select name="cdt_codes"><option value="">-- Select Procedure --</option>{% for proc in procedures %}<option value="{{ proc[0] }}">{{ proc[0] }} - {{ proc[1] }}</option>{% endfor %}</select><input type="text" name="tooth_numbers" placeholder="Tooth #"><input type="text" name="surfaces" placeholder="Surfaces" class="surface-input" readonly><button type="button" class="remove-btn" onclick="this.parentElement.remove()">✕</button>';
+        row.innerHTML = '<select name="cdt_codes"><option value="">-- Select Procedure --</option>{% for proc in procedures %}<option value="{{ proc[0] }}">{{ proc[0] }} - {{ proc[1] }}</option>{% endfor %}</select><input type="text" name="tooth_numbers" placeholder="Tooth #"><input type="text" name="surfaces" placeholder="Surfaces" class="surface-input"><button type="button" class="remove-btn" onclick="this.parentElement.remove()">✕</button>';
         container.appendChild(row);
+        attachSurfaceListener(row);
     }
+
+    attachSurfaceListener(document.querySelector('.procedure-row'));
     </script>
 </body>
 </html>
