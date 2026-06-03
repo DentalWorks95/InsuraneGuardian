@@ -359,7 +359,20 @@
             return;
         }
         if (!isChartingMode) return;
-        if (!isClinicalSpeech(text)) return;
+if (!isClinicalSpeech(text)) return;
+
+var existingKeywords = ['existing','missing','extracted','has crown','has implant','has filling','has amalgam','present','already has','congenitally missing'];
+var lower2 = text.toLowerCase();
+for (var e = 0; e < existingKeywords.length; e++) {
+    if (lower2.indexOf(existingKeywords[e]) !== -1) {
+        var voiceResultEx = document.getElementById('voice-result');
+        voiceResultEx.textContent = '⏭️ Skipped (existing): "' + text + '"';
+        voiceResultEx.style.display = 'block';
+        return;
+    }
+}
+
+
         voiceResult.textContent = '🎤 Heard: "' + text + '"';
         voiceResult.style.display = 'block';
         var toothNum = getToothNumber(text);
