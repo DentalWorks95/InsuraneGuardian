@@ -76,7 +76,7 @@ def get_procedures():
 def check_coverage(carrier_id, cdt_code):
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT carriers.name, coverage_rules.cdt_code, coverage_rules.requirement, coverage_rules.frequency_limit_years, coverage_rules.notes FROM coverage_rules JOIN carriers ON carriers.id = coverage_rules.carrier_id WHERE carriers.id = ? AND coverage_rules.cdt_code = ?", (carrier_id, cdt_code))
+    cursor.execute("SELECT carriers.name, coverage_rules.cdt_code, coverage_rules.requirement, coverage_rules.frequency_limit_years, coverage_rules.notes, coverage_rules.education_why, coverage_rules.education_denial, coverage_rules.patient_script, coverage_rules.clinical_narrative, coverage_rules.denial_triggers FROM coverage_rules JOIN carriers ON carriers.id = coverage_rules.carrier_id WHERE carriers.id = ? AND coverage_rules.cdt_code = ?", (carrier_id, cdt_code))
     result = cursor.fetchone()
     conn.close()
     return result

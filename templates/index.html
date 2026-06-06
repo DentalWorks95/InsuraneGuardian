@@ -48,6 +48,19 @@
         .checklist { background: #e8f4f8; padding: 12px; border-radius: 8px; margin: 8px 0; font-size: 14px; }
         .checklist ul { margin: 5px 0; padding-left: 20px; }
         .checklist li { margin: 4px 0; }
+        .denial-triggers { background: #f8d7da; padding: 12px; border-radius: 8px; margin: 8px 0; font-size: 14px; }
+        .denial-triggers ul { margin: 5px 0; padding-left: 20px; }
+        .denial-triggers li { margin: 4px 0; }
+        .edu-section { margin-top: 10px; border: 1px solid #e0f0ff; border-radius: 8px; overflow: hidden; }
+        .edu-summary { cursor: pointer; color: #2E75B6; font-weight: bold; padding: 10px 14px; background: #f0f7ff; list-style: none; font-size: 14px; }
+        .edu-why { background: #e8f4f8; padding: 12px; border-radius: 8px; margin: 8px 0; font-size: 14px; }
+        .edu-denial { background: #f8d7da; padding: 12px; border-radius: 8px; margin: 8px 0; font-size: 14px; }
+        .edu-script { background: #d4edda; padding: 12px; border-radius: 8px; margin: 8px 0; font-size: 14px; }
+        .edu-narrative { background: #fff3cd; padding: 12px; border-radius: 8px; margin: 8px 0; font-size: 14px; }
+        .edu-clinically { background: #f8f9fa; padding: 12px; border-radius: 8px; margin: 8px 0; font-size: 14px; }
+        .edu-clinically ul { margin: 8px 0; padding-left: 20px; }
+        .edu-clinically li { margin: 4px 0; }
+        .copy-btn { background: #2E75B6; color: white; border: none; padding: 6px 14px; border-radius: 5px; cursor: pointer; font-size: 13px; margin-top: 8px; }
         .no-result { background: #f8d7da; padding: 12px; border-radius: 8px; color: #721c24; font-size: 14px; }
         .column-labels { display: flex; gap: 8px; margin-bottom: 5px; }
         .col-procedure { flex: 2; font-size: 13px; color: #666; font-weight: bold; padding-left: 5px; }
@@ -130,50 +143,124 @@
         {% endif %}
         <div class="summary-bar">
             {% for r in results %}
-            {% if r.alert_level == "red" %}
-            <span class="summary-item badge-red">⚠️ {{ r.cdt_code }}{% if r.tooth %} #{{ r.tooth }}{% endif %}</span>
-            {% elif r.alert_level == "yellow" %}
-            <span class="summary-item badge-yellow">⚡ {{ r.cdt_code }}{% if r.tooth %} #{{ r.tooth }}{% endif %}</span>
-            {% elif r.alert_level == "green" %}
-            <span class="summary-item badge-green">✅ {{ r.cdt_code }}{% if r.tooth %} #{{ r.tooth }}{% endif %}</span>
-            {% else %}
-            <span class="summary-item badge-unknown">❓ {{ r.cdt_code }}{% if r.tooth %} #{{ r.tooth }}{% endif %}</span>
-            {% endif %}
+                {% if r.alert_level == "red" %}
+                <span class="summary-item badge-red">⚠️ {{ r.cdt_code }}{% if r.tooth %} #{{ r.tooth }}{% endif %}</span>
+                {% elif r.alert_level == "yellow" %}
+                <span class="summary-item badge-yellow">⚡ {{ r.cdt_code }}{% if r.tooth %} #{{ r.tooth }}{% endif %}</span>
+                {% elif r.alert_level == "green" %}
+                <span class="summary-item badge-green">✅ {{ r.cdt_code }}{% if r.tooth %} #{{ r.tooth }}{% endif %}</span>
+                {% else %}
+                <span class="summary-item badge-unknown">❓ {{ r.cdt_code }}{% if r.tooth %} #{{ r.tooth }}{% endif %}</span>
+                {% endif %}
             {% endfor %}
         </div>
+
         {% for r in results %}
         <div class="procedure-result alert-{{ r.alert_level }}">
             <div class="procedure-result-header">
                 <strong>
                     {{ r.cdt_code }}
-                    {% if r.tooth %}<span class="tooth-badge">Tooth #{{ r.tooth }}{% if r.tooth_location %} — {{ r.tooth_location }}{% endif %}</span>{% endif %}
-                    {% if r.result %} — {{ r.result[0] }}{% endif %}
+                    {% if r.tooth %}
+                    <span class="tooth-badge">Tooth #{{ r.tooth }}{% if r.tooth_location %} — {{ r.tooth_location }}{% endif %}</span>
+                    {% endif %}
+                    {% if r.result %} — {{ r.result[1] }}{% endif %}
                 </strong>
                 {% if r.alert_level == "red" %}<span class="badge-red">⚠️ Pre-Auth Required</span>
                 {% elif r.alert_level == "yellow" %}<span class="badge-yellow">⚡ Documentation Needed</span>
                 {% elif r.alert_level == "green" %}<span class="badge-green">✅ Looks Good</span>
-                {% else %}<span class="badge-unknown">❓ Verify Coverage</span>{% endif %}
+                {% else %}<span class="badge-unknown">❓ Verify Coverage</span>
+                {% endif %}
             </div>
+
             {% if r.result %}
-            <div class="requirement"><strong>📋 Required:</strong> {{ r.result[2] }}</div>
-            {% if r.result[3] and r.result[3] > 0 %}
-            <div class="frequency"><strong>📅 Frequency Limit:</strong> {{ r.result[3] }} year(s)</div>
-            {% endif %}
-            {% if r.result[4] %}
-            <div class="notes"><strong>⚠️ Notes:</strong> {{ r.result[4] }}</div>
-            {% endif %}
-            <div class="checklist">
-                <strong>✅ Capture Before Proceeding:</strong>
-                <ul>
-                    {% if "radiograph" in r.result[2]|lower or "x-ray" in r.result[2]|lower or "radiograph" in r.result[4]|lower %}<li>📷 Radiograph</li>{% endif %}
-                    {% if "photo" in r.result[2]|lower %}<li>📸 Intraoral photograph</li>{% endif %}
-                    {% if "periodontal" in r.result[2]|lower or "pocket" in r.result[2]|lower %}<li>📊 Periodontal chart</li>{% endif %}
-                    {% if "narrative" in r.result[2]|lower or "narrative" in r.result[4]|lower %}<li>📝 Clinical narrative</li>{% endif %}
-                    {% if "pre-authorization" in r.result[2]|lower or "pre-authorization" in r.result[4]|lower %}<li>📬 Submit pre-authorization</li>{% endif %}
-                </ul>
-            </div>
+                {% if r.result[2] %}
+                <div class="requirement"><strong>📋 Required:</strong> {{ r.result[2] }}</div>
+                {% endif %}
+
+                {% if r.result[3] and r.result[3] > 0 %}
+                <div class="frequency"><strong>📅 Frequency Limit:</strong> {{ r.result[3] }} year(s)</div>
+                {% endif %}
+
+                {% if r.result[4] %}
+                <div class="notes"><strong>⚠️ Notes:</strong> {{ r.result[4] }}</div>
+                {% endif %}
+
+                <div class="checklist">
+                    <strong>✅ Capture Before Proceeding:</strong>
+                    <ul>
+                        {% if r.result[2] and ("radiograph" in r.result[2]|lower or "x-ray" in r.result[2]|lower) %}<li>📷 Periapical or bitewing radiograph</li>{% endif %}
+                        {% if r.result[4] and "radiograph" in r.result[4]|lower %}<li>📷 Periapical or bitewing radiograph</li>{% endif %}
+                        {% if r.result[2] and "photo" in r.result[2]|lower %}<li>📸 Intraoral photograph</li>{% endif %}
+                        {% if r.result[2] and ("periodontal" in r.result[2]|lower or "pocket" in r.result[2]|lower) %}<li>📊 Periodontal chart</li>{% endif %}
+                        {% if r.result[2] and "narrative" in r.result[2]|lower %}<li>📝 Clinical narrative</li>{% endif %}
+                        {% if r.result[4] and "narrative" in r.result[4]|lower %}<li>📝 Clinical narrative</li>{% endif %}
+                        {% if r.result[2] and "pre-authorization" in r.result[2]|lower %}<li>📬 Submit pre-authorization</li>{% endif %}
+                    </ul>
+                </div>
+
+                {% if r.result[9] %}
+                <div class="denial-triggers">
+                    <strong>🚫 Automatic Denial Triggers:</strong>
+                    <ul>
+                        {% set triggers = r.result[9].split('|') %}
+                        {% for trigger in triggers %}
+                        <li>{{ trigger.strip() }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                {% if r.result[5] or r.result[6] or r.result[7] or r.result[8] %}
+                <details class="edu-section">
+                    <summary class="edu-summary">📚 Education & Documentation Guide — Click to Expand</summary>
+                    <div style="padding:12px;">
+
+                        {% if r.result[5] %}
+                        <div class="edu-why">
+                            <strong>📖 Why does this carrier require this documentation?</strong><br><br>
+                            {{ r.result[5] }}
+                        </div>
+                        {% endif %}
+
+                        {% if r.result[6] %}
+                        <div class="edu-denial">
+                            <strong>❌ What happens if documentation is missing?</strong><br><br>
+                            {{ r.result[6] }}
+                        </div>
+                        {% endif %}
+
+                        {% if r.result[7] %}
+                        <div class="edu-script">
+                            <strong>🗣️ How to explain this to your patient:</strong><br><br>
+                            <em>{{ r.result[7] }}</em>
+                        </div>
+                        {% endif %}
+
+                        {% if r.result[8] %}
+                        <div class="edu-narrative">
+                            <strong>📝 Suggested Clinical Narrative:</strong><br><br>
+                            <em id="narrative-{{ loop.index }}">{{ r.result[8] }}</em><br><br>
+                            <button class="copy-btn" onclick="copyNarrative('narrative-{{ loop.index }}', this)">📋 Copy Narrative</button>
+                        </div>
+                        {% endif %}
+
+                        <div class="edu-clinically">
+                            <strong>⚖️ Proceed as Clinically Necessary</strong><br><br>
+                            If you and your supervising faculty determine this procedure is clinically necessary regardless of insurance coverage, ensure the following:
+                            <ul>
+                                <li>Document clinical findings thoroughly in your clinical narrative</li>
+                                <li>Have supervising faculty review and sign off on the treatment plan</li>
+                                <li>Obtain signed patient financial consent acknowledging potential patient responsibility for the full fee if insurance denies the claim</li>
+                                <li>Submit the claim with a detailed clinical narrative explaining medical necessity</li>
+                            </ul>
+                        </div>
+
+                    </div>
+                </details>
+                {% endif %}
+
             {% else %}
-            <div class="no-result">❓ No specific coverage rules found. Verify directly with carrier.</div>
+            <div class="no-result">❓ No specific coverage rules found for this carrier and procedure. Verify directly with the carrier.</div>
             {% endif %}
         </div>
         {% endfor %}
@@ -181,6 +268,14 @@
     {% endif %}
 
     <script>
+    function copyNarrative(id, btn) {
+        var text = document.getElementById(id).innerText;
+        navigator.clipboard.writeText(text).then(function() {
+            btn.textContent = '✅ Copied!';
+            setTimeout(function() { btn.textContent = '📋 Copy Narrative'; }, 2000);
+        });
+    }
+
     var isChartingMode = false;
     var recognition = null;
     var isListening = false;
@@ -193,66 +288,8 @@
     var MULTI_SURFACE_PHRASES = {'mesio occlusal distal buccal lingual':'MODBL','mesial occlusal distal buccal lingual':'MODBL','mesio occlusal distal buccal':'MODB','mesial occlusal distal buccal':'MODB','mesio occlusal distal lingual':'MODL','mesial occlusal distal lingual':'MODL','mesio occlusal distal':'MOD','mesial occlusal distal':'MOD','mesio occlusal buccal':'MOB','mesial occlusal buccal':'MOB','disto occlusal buccal':'DOB','distal occlusal buccal':'DOB','mesio occlusal lingual':'MOL','mesial occlusal lingual':'MOL','disto occlusal lingual':'DOL','distal occlusal lingual':'DOL','mesio occlusal':'MO','mesial occlusal':'MO','disto occlusal':'DO','distal occlusal':'DO','occluso buccal':'OB','occlusal buccal':'OB','occluso lingual':'OL','occlusal lingual':'OL','mesio buccal':'MB','mesial buccal':'MB','disto buccal':'DB','distal buccal':'DB','mesio lingual':'ML','mesial lingual':'ML','disto lingual':'DL','distal lingual':'DL','buccal lingual':'BL','mesio incisal distal facial lingual':'MIDFL','mesio incisal facial lingual':'MIFL','disto incisal facial lingual':'DIFL','mesio incisal distal facial':'MIDF','mesio incisal distal lingual':'MIDL','mesio incisal facial':'MIF','disto incisal facial':'DIF','mesio facial lingual':'MFL','disto facial lingual':'DFL','mesio incisal lingual':'MIL','disto incisal lingual':'DIL','mesio incisal distal':'MID','mesio incisal':'MI','disto incisal':'DI','mesial incisal':'MI','distal incisal':'DI','mesio facial':'MF','disto facial':'DF','mesial facial':'MF','distal facial':'DF'};
     var SINGLE_SURFACE = {'occlusal':'O','buccal':'B','lingual':'L','mesial':'M','distal':'D','facial':'F','incisal':'I'};
     var ABBREVIATIONS = ['midfl','modbl','mifl','difl','midf','midl','mobl','molb','dobl','dolb','modb','modl','mob','dob','mol','dol','mod','mif','dif','mfl','dfl','mil','dil','mid','mi','di','mf','df','ml','dl','mo','do','ob','ol','mb','db','bl'];
-
-    var DENTAL_TRIGGERS = {
-        'completely bony':'D7240','complete bony':'D7240',
-        'partially bony':'D7230','partial bony':'D7230',
-        'bony impaction':'D7230','boney impaction':'D7230','impaction':'D7230',
-        'crown':'D2740','buildup':'D2950','core buildup':'D2950',
-        'root canal molar':'D3330','root canal premolar':'D3320',
-        'root canal anterior':'D3310','root canal':'D3330',
-        'surgical extraction':'D7210','extraction':'D7140',
-        'srp':'D4341','scaling root planing':'D4341',
-        'deep cleaning':'D4341','scaling':'D4341',
-        'prophylaxis':'D1110','prophy':'D1110',
-        'sealant':'D1351',
-        'same day implant bone graft':'D6104',
-        'implant bone graft':'D6104',
-        'same day graft':'D6104',
-        'peri implantitis graft':'D6103',
-        'peri-implantitis graft':'D6103',
-        'peri implant defect':'D6103',
-        'periodontal bone graft':'D4263',
-        'perio bone graft':'D4263',
-        'period bone graft':'D4263',
-        'periodo bone graft':'D4263',
-        'perry bone graft':'D4263',
-        'lateral sinus lift':'D7951',
-        'lateral window sinus lift':'D7951',
-        'lateral sinus augmentation':'D7951',
-        'crestal sinus lift':'D7952',
-        'crestal approach sinus lift':'D7952',
-        'vertical sinus lift':'D7952',
-        'crystal sinus lift':'D7952',
-        'crystal sinus':'D7952',
-        'sinus lift':'D7951',
-        'sinus augmentation':'D7951',
-        'block graft':'D7950',
-        'ridge augmentation':'D7950',
-        'socket graft':'D7953',
-        'socket preservation':'D7953',
-        'ridge preservation':'D7953',
-        'bone graft':'D7953',
-        'implant':'D6010',
-        'full denture':'D5110','complete denture':'D5110','denture':'D5110',
-        'partial denture':'D5211',
-        'panoramic':'D0330','pano':'D0330',
-        'bitewing':'D0274','bitewings':'D0274',
-        'periapical':'D0220',
-        'bridge':'D6240','pontic':'D6240',
-        'gingivectomy':'D4210','osseous surgery':'D4260',
-        'onlay':'D2642','inlay':'D2610','veneer':'D2960',
-        'pulpotomy':'D3220','apicoectomy':'D3410',
-        'debridement':'D4355',
-        'periodontal maintenance':'D4910','perio maintenance':'D4910',
-        'amalgam':'D2160',
-        'filling':'SURFACE_DETECT',
-        'composite':'SURFACE_DETECT',
-        'restoration':'SURFACE_DETECT'
-    };
-
+    var DENTAL_TRIGGERS = {'completely bony':'D7240','complete bony':'D7240','partially bony':'D7230','partial bony':'D7230','bony impaction':'D7230','boney impaction':'D7230','impaction':'D7230','crown':'D2740','buildup':'D2950','core buildup':'D2950','root canal molar':'D3330','root canal premolar':'D3320','root canal anterior':'D3310','root canal':'D3330','surgical extraction':'D7210','extraction':'D7140','srp':'D4341','scaling root planing':'D4341','deep cleaning':'D4341','scaling':'D4341','prophylaxis':'D1110','prophy':'D1110','sealant':'D1351','same day implant bone graft':'D6104','implant bone graft':'D6104','same day graft':'D6104','peri implantitis graft':'D6103','peri-implantitis graft':'D6103','peri implant defect':'D6103','perio bone graft':'D4263','periodontal bone graft':'D4263','period bone graft':'D4263','periodo bone graft':'D4263','perry bone graft':'D4263','lateral sinus lift':'D7951','lateral window sinus lift':'D7951','lateral sinus augmentation':'D7951','crestal sinus lift':'D7952','crestal approach sinus lift':'D7952','vertical sinus lift':'D7952','crystal sinus lift':'D7952','crystal sinus':'D7952','sinus lift':'D7951','sinus augmentation':'D7951','block graft':'D7950','ridge augmentation':'D7950','socket graft':'D7953','socket preservation':'D7953','ridge preservation':'D7953','bone graft':'D7953','implant':'D6010','full denture':'D5110','complete denture':'D5110','denture':'D5110','partial denture':'D5211','panoramic':'D0330','pano':'D0330','bitewing':'D0274','bitewings':'D0274','periapical':'D0220','bridge':'D6240','pontic':'D6240','gingivectomy':'D4210','osseous surgery':'D4260','onlay':'D2642','inlay':'D2610','veneer':'D2960','pulpotomy':'D3220','apicoectomy':'D3410','debridement':'D4355','periodontal maintenance':'D4910','perio maintenance':'D4910','amalgam':'D2160','filling':'SURFACE_DETECT','composite':'SURFACE_DETECT','restoration':'SURFACE_DETECT'};
     var CLINICAL_KEYWORDS = ['tooth','teeth','molar','premolar','bicuspid','incisor','canine','occlusal','mesial','distal','buccal','lingual','facial','incisal','cusp','fracture','decay','caries','cavity','bone loss','recession','pocket','bleeding','periapical','abscess','pulp','root','crown','filling','composite','amalgam','srp','scaling','prophy','sealant','implant','bridge','extraction','impaction','buildup','bone graft','socket graft','socket preservation','ridge preservation','sinus lift','block graft','ridge augmentation','peri implant','perio bone graft','mod','mob','dob','mol','dol','modb','modbl','mifl','difl','midf','midl','midfl','mif','dif','mfl','dfl','mil','dil','mid','mo','do','ob','ol','mb','db','bl','ml','dl'];
-
     var spokenNumbers = {'thirty two':'32','thirty too':'32','thirty one':'31','thirty won':'31','thirty':'30','thirdy':'30','twenty nine':'29','twenty mine':'29','twenty eight':'28','twenty ate':'28','twenty seven':'27','twenty six':'26','twenty five':'25','twenty fife':'25','twenty four':'24','twenty for':'24','twenty three':'23','twenty tree':'23','twenty two':'22','twenty too':'22','twenty to':'22','twenty one':'21','twenty won':'21','twenty':'20','tweny':'20','nineteen':'19','ninteen':'19','mineteen':'19','eighteen':'18','eighten':'18','seventeen':'17','seveneen':'17','sixteen':'16','sixten':'16','fifteen':'15','fiveteen':'15','fiften':'15','fourteen':'14','forteen':'14','fourten':'14','for teen':'14','for ten':'14','thirteen':'13','thirten':'13','twelve':'12','twelv':'12','twelf':'12','eleven':'11','alevan':'11','ten':'10','tin':'10','nine':'9','mine':'9','nein':'9','ninh':'9','eight':'8','ate':'8','ait':'8','toothache':'8','tooth ache':'8','tooth ate':'8','seven':'7','sevan':'7','severn':'7','six':'6','sicks':'6','sick':'6','five':'5','fife':'5','hive':'5','four':'4','for':'4','fore':'4','three':'3','tree':'3','free':'3','two':'2','to':'2','too':'2','tu':'2','one':'1','won':'1','wan':'1'};
 
     function isClinicalSpeech(text) {
@@ -359,22 +396,24 @@
             return;
         }
         if (!isChartingMode) return;
-if (!isClinicalSpeech(text)) return;
+        if (!isClinicalSpeech(text)) return;
 
-var existingKeywords = ['existing','missing','extracted','has crown','has implant','has filling','has amalgam','present','already has','congenitally missing'];
-var lower2 = text.toLowerCase();
-for (var e = 0; e < existingKeywords.length; e++) {
-    if (lower2.indexOf(existingKeywords[e]) !== -1) {
-        var voiceResultEx = document.getElementById('voice-result');
-        voiceResultEx.textContent = '⏭️ Skipped (existing): "' + text + '"';
-        voiceResultEx.style.display = 'block';
-        return;
-    }
-}
-
+        var existingKeywords = ['existing','missing','extracted','has crown','has implant','has filling','has amalgam','present','already has','congenitally missing'];
+        for (var e = 0; e < existingKeywords.length; e++) {
+            if (lower.indexOf(existingKeywords[e]) !== -1) {
+                voiceResult.textContent = '⏭️ Skipped (existing/missing): "' + text + '"';
+                voiceResult.style.background = '#e8f4f8';
+                voiceResult.style.color = '#2E75B6';
+                voiceResult.style.display = 'block';
+                return;
+            }
+        }
 
         voiceResult.textContent = '🎤 Heard: "' + text + '"';
+        voiceResult.style.background = '#e8f4f8';
+        voiceResult.style.color = '#2E75B6';
         voiceResult.style.display = 'block';
+
         var toothNum = getToothNumber(text);
         var detectedCode = null;
         var surfaceAbbr = null;
