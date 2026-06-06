@@ -20,19 +20,29 @@
         input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; }
         .add-btn { background: #28a745; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 15px; cursor: pointer; width: 100%; margin-top: 15px; }
         .add-btn:hover { background: #1e7e34; }
-        .users-box { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .users-box { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
         .users-box h2 { color: #2E75B6; margin-bottom: 15px; font-size: 18px; }
-        .user-row { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #eee; flex-wrap: wrap; gap: 10px; }
-        .user-row:last-child { border-bottom: none; }
-        .user-info-row { display: flex; align-items: center; gap: 12px; }
-        .user-avatar { width: 40px; height: 40px; border-radius: 50%; background: #2E75B6; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; }
-        .user-name { font-weight: bold; font-size: 15px; }
-        .user-role { font-size: 13px; color: #666; }
-        .role-admin { background: #2E75B6; color: white; padding: 3px 10px; border-radius: 10px; font-size: 12px; }
-        .role-staff { background: #6c757d; color: white; padding: 3px 10px; border-radius: 10px; font-size: 12px; }
-        .delete-btn { background: #dc3545; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-size: 13px; cursor: pointer; }
-        .delete-btn:hover { background: #c82333; }
+        .pod-section { margin-bottom: 25px; }
+        .pod-header { background: #2E75B6; color: white; padding: 10px 15px; border-radius: 8px 8px 0 0; font-weight: bold; font-size: 15px; }
+        .user-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-bottom: 1px solid #eee; flex-wrap: wrap; gap: 10px; background: white; }
+        .user-row:last-child { border-bottom: none; border-radius: 0 0 8px 8px; }
+        .user-avatar { width: 38px; height: 38px; border-radius: 50%; background: #2E75B6; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 16px; flex-shrink: 0; }
+        .user-name { font-weight: bold; font-size: 14px; }
+        .user-meta { font-size: 12px; color: #666; margin-top: 2px; }
+        .user-info-row { display: flex; align-items: center; gap: 10px; }
+        .badge { padding: 3px 10px; border-radius: 10px; font-size: 12px; font-weight: bold; }
+        .badge-admin { background: #dc3545; color: white; }
+        .badge-pod-faculty { background: #fd7e14; color: white; }
+        .badge-student { background: #2E75B6; color: white; }
+        .badge-staff { background: #6c757d; color: white; }
+        .badge-pod { background: #e8f4f8; color: #2E75B6; }
+        .badge-year { background: #d4edda; color: #155724; }
+        .delete-btn { background: #dc3545; color: white; border: none; padding: 7px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; }
         .protected { color: #999; font-size: 13px; font-style: italic; }
+        .no-users { color: #666; font-size: 14px; padding: 15px; text-align: center; background: #f8f9fa; border-radius: 0 0 8px 8px; }
+        .profile-box { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .profile-box h2 { color: #2E75B6; margin-bottom: 15px; font-size: 18px; }
+        .save-btn { background: #2E75B6; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 15px; cursor: pointer; width: 100%; margin-top: 15px; }
     </style>
 </head>
 <body>
@@ -56,9 +66,13 @@
         <a href="/opendental">🔗 Open Dental</a>
     </div>
 
+    {% if current_user.role == 'admin' %}
     <div class="form-box">
         <h2>➕ Add New User</h2>
         <form method="POST" action="/users/add">
+            <label>Full Name:</label>
+            <input type="text" name="full_name" placeholder="Enter full name" required>
+
             <label>Username:</label>
             <input type="text" name="username" placeholder="Enter username" required>
 
@@ -67,41 +81,106 @@
 
             <label>Role:</label>
             <select name="role">
-                <option value="staff">Staff</option>
+                <option value="student">Student</option>
+                <option value="pod_faculty">Pod Faculty</option>
                 <option value="admin">Admin</option>
+            </select>
+
+            <label>Pod Assignment:</label>
+            <select name="pod">
+                <option value="">-- No Pod --</option>
+                <option value="A">Pod A</option>
+                <option value="B">Pod B</option>
+                <option value="C">Pod C</option>
+                <option value="D">Pod D</option>
+                <option value="E">Pod E</option>
+                <option value="F">Pod F</option>
+            </select>
+
+            <label>Year Level:</label>
+            <select name="year_level">
+                <option value="">-- Select Year --</option>
+                <option value="2nd Year">2nd Year</option>
+                <option value="3rd Year">3rd Year</option>
             </select>
 
             <button type="submit" class="add-btn">➕ Add User</button>
         </form>
     </div>
+    {% endif %}
 
+    <div class="profile-box">
+        <h2>⚙️ My Profile Settings</h2>
+        <form method="POST" action="/users/update_profile">
+            <label>Full Name:</label>
+            <input type="text" name="full_name" placeholder="Enter your full name" value="{{ current_user.full_name or '' }}">
+
+            <label>My Pod:</label>
+            <select name="pod">
+                <option value="">-- Select Pod --</option>
+                <option value="A" {% if current_user.pod == 'A' %}selected{% endif %}>Pod A</option>
+                <option value="B" {% if current_user.pod == 'B' %}selected{% endif %}>Pod B</option>
+                <option value="C" {% if current_user.pod == 'C' %}selected{% endif %}>Pod C</option>
+                <option value="D" {% if current_user.pod == 'D' %}selected{% endif %}>Pod D</option>
+                <option value="E" {% if current_user.pod == 'E' %}selected{% endif %}>Pod E</option>
+                <option value="F" {% if current_user.pod == 'F' %}selected{% endif %}>Pod F</option>
+            </select>
+
+            <label>Year Level:</label>
+            <select name="year_level">
+                <option value="">-- Select Year --</option>
+                <option value="2nd Year" {% if current_user.year_level == '2nd Year' %}selected{% endif %}>2nd Year</option>
+                <option value="3rd Year" {% if current_user.year_level == '3rd Year' %}selected{% endif %}>3rd Year</option>
+            </select>
+
+            <button type="submit" class="save-btn">💾 Save Profile</button>
+        </form>
+    </div>
+
+    {% if current_user.role == 'admin' %}
     <div class="users-box">
-        <h2>👥 Current Users ({{ all_users|length }})</h2>
-        {% for user in all_users %}
-        <div class="user-row">
-            <div class="user-info-row">
-                <div class="user-avatar">{{ user[1][0]|upper }}</div>
-                <div>
-                    <div class="user-name">{{ user[1] }}</div>
-                    <div class="user-role">
-                        {% if user[2] == 'admin' %}
-                        <span class="role-admin">Admin</span>
-                        {% else %}
-                        <span class="role-staff">Staff</span>
-                        {% endif %}
+        <h2>👥 All Users by Pod ({{ all_users|length }} total)</h2>
+
+        {% set pods = ['A', 'B', 'C', 'D', 'E', 'F', 'None'] %}
+        {% for pod in pods %}
+        {% set pod_users = all_users|selectattr('4', 'equalto', pod if pod != 'None' else none)|list %}
+        {% if pod_users %}
+        <div class="pod-section">
+            <div class="pod-header">🏥 Pod {{ pod if pod != 'None' else 'Unassigned' }}</div>
+            {% for user in pod_users %}
+            <div class="user-row">
+                <div class="user-info-row">
+                    <div class="user-avatar">{{ user[2][0]|upper if user[2] else user[1][0]|upper }}</div>
+                    <div>
+                        <div class="user-name">{{ user[2] or user[1] }}</div>
+                        <div class="user-meta">
+                            @{{ user[1] }}
+                            {% if user[5] %} · {{ user[5] }}{% endif %}
+                        </div>
+                        <div style="margin-top:4px; display:flex; gap:5px; flex-wrap:wrap;">
+                            {% if user[3] == 'admin' %}<span class="badge badge-admin">Admin</span>
+                            {% elif user[3] == 'pod_faculty' %}<span class="badge badge-pod-faculty">Pod Faculty</span>
+                            {% elif user[3] == 'student' %}<span class="badge badge-student">Student</span>
+                            {% else %}<span class="badge badge-staff">Staff</span>{% endif %}
+                            {% if user[4] %}<span class="badge badge-pod">Pod {{ user[4] }}</span>{% endif %}
+                            {% if user[5] %}<span class="badge badge-year">{{ user[5] }}</span>{% endif %}
+                        </div>
                     </div>
                 </div>
+                {% if user[1] != 'admin' %}
+                <form method="POST" action="/users/delete/{{ user[0] }}" onsubmit="return confirm('Delete user {{ user[2] or user[1] }}? This will permanently delete all their data.')">
+                    <button type="submit" class="delete-btn">🗑️ Delete</button>
+                </form>
+                {% else %}
+                <span class="protected">🔒 Protected</span>
+                {% endif %}
             </div>
-            {% if user[1] != 'admin' %}
-            <form method="POST" action="/users/delete/{{ user[0] }}" onsubmit="return confirm('Delete user {{ user[1] }}?')">
-                <button type="submit" class="delete-btn">🗑️ Delete</button>
-            </form>
-            {% else %}
-            <span class="protected">🔒 Protected</span>
-            {% endif %}
+            {% endfor %}
         </div>
+        {% endif %}
         {% endfor %}
     </div>
+    {% endif %}
 
 </body>
 </html>
