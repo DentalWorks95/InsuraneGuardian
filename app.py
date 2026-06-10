@@ -121,12 +121,14 @@ def get_alert_level(result):
     requirement = result[2].lower() if result[2] else ""
     notes = result[4].lower() if result[4] else ""
     combined = requirement + " " + notes
-    if "pre-authorization required" in combined:
+    if "pre-authorization required" in combined or "prior authorization required" in combined:
         return "red"
     yellow_triggers = [
         "required", "must be", "charting", "radiograph", "photograph",
         "documentation", "narrative", "evidence", "pocket depth",
-        "bone loss", "bleeding", "recommended", "verify", "submitted", "showing"
+        "bone loss", "bleeding", "recommended", "verify", "submitted",
+        "showing", "periapical", "bitewing", "panoramic not acceptable",
+        "not acceptable", "narrative required"
     ]
     for word in yellow_triggers:
         if word in combined:
