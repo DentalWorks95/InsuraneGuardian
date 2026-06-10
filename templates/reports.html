@@ -28,15 +28,31 @@
         .stat-green .stat-number { color: #28a745; }
         .section-box { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
         .section-box h2 { color: #2E75B6; margin-bottom: 15px; font-size: 18px; }
-        .insight-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px; border-radius: 8px; margin-bottom: 10px; background: #f8f9fa; }
-        .insight-icon { font-size: 24px; }
-        .insight-text { font-size: 14px; color: #333; line-height: 1.5; }
-        .insight-text strong { color: #2E75B6; }
-        .methodology-box { background: #f0f7ff; padding: 15px; border-radius: 8px; font-size: 13px; color: #555; line-height: 1.6; }
+        .pod-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .pod-card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); border-top: 4px solid #2E75B6; }
+        .pod-card h3 { color: #2E75B6; margin-bottom: 12px; font-size: 16px; }
+        .pod-savings { font-size: 24px; font-weight: bold; color: #28a745; margin-bottom: 8px; }
+        .pod-stats { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+        .pod-stat { text-align: center; flex: 1; min-width: 60px; }
+        .pod-stat-number { font-size: 20px; font-weight: bold; }
+        .pod-stat-label { font-size: 11px; color: #666; }
+        .pod-stat-red .pod-stat-number { color: #dc3545; }
+        .pod-stat-yellow .pod-stat-number { color: #ffc107; }
+        .pod-stat-green .pod-stat-number { color: #28a745; }
+        .pod-stat-total .pod-stat-number { color: #2E75B6; }
+        .student-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        .student-table th { background: #2E75B6; color: white; padding: 10px; text-align: left; }
+        .student-table td { padding: 10px; border-bottom: 1px solid #eee; }
+        .student-table tr:hover { background: #f5f5f5; }
+        .badge-pod { background: #e8f4f8; color: #2E75B6; padding: 3px 10px; border-radius: 10px; font-size: 12px; }
+        .badge-year { background: #d4edda; color: #155724; padding: 3px 10px; border-radius: 10px; font-size: 12px; }
+        .savings-cell { color: #28a745; font-weight: bold; }
         .print-btn { background: #2E75B6; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-size: 15px; cursor: pointer; width: 100%; margin-top: 10px; }
-        .print-btn:hover { background: #1F5A9E; }
+        .methodology-box { background: #f0f7ff; padding: 15px; border-radius: 8px; font-size: 13px; color: #555; line-height: 1.6; }
+        .no-data { color: #999; font-size: 14px; text-align: center; padding: 20px; }
         @media (max-width: 600px) {
             .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .pod-grid { grid-template-columns: 1fr; }
         }
         @media print {
             .nav, .print-btn { display: none; }
@@ -67,8 +83,8 @@
 
     <div class="savings-banner">
         <div class="savings-amount">${{ "{:,}".format(estimated_savings) }}</div>
-        <div class="savings-label">💰 Estimated Revenue Protected</div>
-        <div class="savings-sublabel">Based on {{ total_checks }} coverage checks performed</div>
+        <div class="savings-label">💰 Total Estimated Revenue Protected</div>
+        <div class="savings-sublabel">Based on {{ total_checks }} coverage checks across all pods</div>
     </div>
 
     <div class="stats-grid">
@@ -90,33 +106,66 @@
         </div>
     </div>
 
+    {% if pod_stats %}
     <div class="section-box">
-        <h2>💡 Key Insights</h2>
-        <div class="insight-item">
-            <div class="insight-icon">⚠️</div>
-            <div class="insight-text">
-                <strong>{{ total_red }} procedures</strong> required pre-authorization alerts. Each of these represented a potential automatic denial if submitted without pre-auth — estimated value protected: <strong>${{ "{:,}".format(total_red * avg_denial_cost) }}</strong>
+        <h2>🏥 Revenue Protected by Pod</h2>
+        <div class="pod-grid">
+            {% for pod, stats in pod_stats.items() %}
+            {% if stats.total > 0 %}
+            <div class="pod-card">
+                <h3>Pod {{ pod }}</h3>
+                <div class="pod-savings">${{ "{:,}".format(stats.savings) }}</div>
+                <div style="font-size:12px; color:#666; margin-bottom:10px;">estimated revenue protected</div>
+                <div class="pod-stats">
+                    <div class="pod-stat pod-stat-total">
+                        <div class="pod-stat-number">{{ stats.total }}</div>
+                        <div class="pod-stat-label">Total</div>
+                    </div>
+                    <div class="pod-stat pod-stat-red">
+                        <div class="pod-stat-number">{{ stats.red }}</div>
+                        <div class="pod-stat-label">Pre-Auth</div>
+                    </div>
+                    <div class="pod-stat pod-stat-yellow">
+                        <div class="pod-stat-number">{{ stats.yellow }}</div>
+                        <div class="pod-stat-label">Docs</div>
+                    </div>
+                </div>
             </div>
-        </div>
-        <div class="insight-item">
-            <div class="insight-icon">⚡</div>
-            <div class="insight-text">
-                <strong>{{ total_yellow }} procedures</strong> had documentation deficiency alerts. Catching these before submission prevented potential denials due to missing radiographs, photos, or clinical notes — estimated value protected: <strong>${{ "{:,}".format(total_yellow * avg_denial_cost) }}</strong>
-            </div>
-        </div>
-        <div class="insight-item">
-            <div class="insight-icon">✅</div>
-            <div class="insight-text">
-                <strong>{{ total_green }} procedures</strong> passed coverage checks with no issues — ready for clean claim submission.
-            </div>
-        </div>
-        <div class="insight-item">
-            <div class="insight-icon">📊</div>
-            <div class="insight-text">
-                <strong>Denial prevention rate:</strong> {{ (((total_red + total_yellow) / total_checks * 100)|round(1)) if total_checks > 0 else 0 }}% of checks identified a potential denial risk before submission.
-            </div>
+            {% endif %}
+            {% endfor %}
         </div>
     </div>
+    {% endif %}
+
+    {% if student_stats %}
+    <div class="section-box">
+        <h2>👩‍🎓 Revenue Protected by Student</h2>
+        <table class="student-table">
+            <tr>
+                <th>Student</th>
+                <th>Pod</th>
+                <th>Year</th>
+                <th>Checks</th>
+                <th>Pre-Auth</th>
+                <th>Docs</th>
+                <th>Revenue Protected</th>
+            </tr>
+            {% for student in student_stats %}
+            {% if student.total > 0 %}
+            <tr>
+                <td>{{ student.full_name or student.username }}</td>
+                <td>{% if student.pod %}<span class="badge-pod">Pod {{ student.pod }}</span>{% else %}—{% endif %}</td>
+                <td>{% if student.year_level %}<span class="badge-year">{{ student.year_level }}</span>{% else %}—{% endif %}</td>
+                <td>{{ student.total }}</td>
+                <td style="color:#dc3545;">{{ student.red }}</td>
+                <td style="color:#ffc107;">{{ student.yellow }}</td>
+                <td class="savings-cell">${{ "{:,}".format(student.savings) }}</td>
+            </tr>
+            {% endif %}
+            {% endfor %}
+        </table>
+    </div>
+    {% endif %}
 
     <div class="section-box">
         <h2>📋 Methodology</h2>

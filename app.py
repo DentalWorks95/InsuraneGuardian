@@ -331,28 +331,48 @@ def reports():
 
     pod_stats = {}
     for pod in ["A", "B", "C", "D", "E", "F"]:
-        users_in_pod = conn.execute("SELECT username FROM users WHERE pod = ?", (pod,)).fetchall() if False else \
-            get_db().execute("SELECT username FROM users WHERE pod = ?", (pod,)).fetchall()
+        users_in_pod = conn.execute("SELECT username FROM users WHERE pod = ?", (pod,)).fetchall()
         usernames = [u[0] for u in users_in_pod]
         if usernames:
             placeholders = ",".join(["?" for _ in usernames])
-            db = get_db()
-            pod_total = db.execute(f"SELECT COUNT(*) FROM audit_log WHERE action = 'COVERAGE_CHECK' AND username IN ({placeholders})", usernames).fetchone()[0]
-            pod_red = db.execute(f"SELECT COUNT(*) FROM audit_log WHERE action = 'COVERAGE_CHECK' AND details LIKE '%Alert: red%' AND username IN ({placeholders})", usernames).fetchone()[0]
-            pod_yellow = db.execute(f"SELECT COUNT(*) FROM audit_log WHERE action = 'COVERAGE_CHECK' AND details LIKE '%Alert: yellow%' AND username IN ({placeholders})", usernames).fetchone()[0]
-            db.close()
+            pod_total = conn.execute(f"SELECT COUNT(*) FROM audit_log WHERE action = 'COVERAGE_CHECK' AND username IN ({placeholders})", usernames).fetchone()[0]
+            pod_red = conn.execute(f"SELECT COUNT(*) FROM audit_log WHERE action = 'COVERAGE_CHECK' AND details LIKE '%Alert: red%' AND username IN ({placeholders})", usernames).fetchone()[0]
+            pod_yellow = conn.execute(f"SELECT COUNT(*) FROM audit_log WHERE action = 'COVERAGE_CHECK' AND details LIKE '%Alert: yellow%' AND username IN ({placeholders})", usernames).fetchone()[0]
             pod_stats[pod] = {
                 "total": pod_total,
                 "red": pod_red,
                 "yellow": pod_yellow,
-                "savings": (pod_red + pod_yellow) * 850
+                "savings": (pod_red + pod_yellow) * avg_denial_cost
             }
 
+    cursor.execute("SELECT id, username, full_name, role, pod, year_level FROM users WHERE role != 'admin'")
+    all_students = cursor.fetchall()
+    student_stats = []
+    for student in all_students:
+        username = student[1]
+        full_name = student[2]
+        pod = student[4]
+        year_level = student[5]
+        s_total = conn.execute("SELECT COUNT(*) FROM audit_log WHERE action = 'COVERAGE_CHECK' AND username = ?", (username,)).fetchone()[0]
+        s_red = conn.execute("SELECT COUNT(*) FROM audit_log WHERE action = 'COVERAGE_CHECK' AND details LIKE '%Alert: red%' AND username = ?", (username,)).fetchone()[0]
+        s_yellow = conn.execute("SELECT COUNT(*) FROM audit_log WHERE action = 'COVERAGE_CHECK' AND details LIKE '%Alert: yellow%' AND username = ?", (username,)).fetchone()[0]
+        student_stats.append({
+            "username": username,
+            "full_name": full_name,
+            "pod": pod,
+            "year_level": year_level,
+            "total": s_total,
+            "red": s_red,
+            "yellow": s_yellow,
+            "savings": (s_red + s_yellow) * avg_denial_cost
+        })
+
+    student_stats.sort(key=lambda x: x["savings"], reverse=True)
     conn.close()
     return render_template("reports.html", total_checks=total_checks, total_red=total_red,
         total_yellow=total_yellow, total_green=total_green,
         estimated_savings=estimated_savings, avg_denial_cost=avg_denial_cost,
-        pod_stats=pod_stats)
+        pod_stats=pod_stats, student_stats=student_stats)
 
 
 @app.route("/users", methods=["GET", "POST"])
