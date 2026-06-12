@@ -488,6 +488,10 @@ def create_checkout_session():
     return jsonify({"url": checkout_session.url})
 
 
+@app.route("/cob")
+@login_required
+def cob():
+    return render_template("cob.html")
 @app.route("/opendental", methods=["GET", "POST"])
 @login_required
 def opendental():

@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>COB Guide</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, sans-serif; background-color: #f5f5f5; padding: 15px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+        h1 { color: #2E75B6; font-size: clamp(20px, 4vw, 28px); }
+        .nav { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
+        .nav a { color: #2E75B6; text-decoration: none; font-size: 14px; background: white; padding: 8px 14px; border-radius: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+        .nav a:hover { background: #2E75B6; color: white; }
+        .nav a.active { background: #2E75B6; color: white; }
+        .user-info { color: #666; font-size: 13px; }
+        .logout { color: #2E75B6; text-decoration: none; font-size: 13px; }
+        .hero { background: linear-gradient(135deg, #2E75B6, #1a4f8a); color: white; padding: 30px; border-radius: 12px; margin-bottom: 25px; }
+        .hero h2 { font-size: clamp(22px, 4vw, 32px); margin-bottom: 10px; }
+        .hero p { font-size: 15px; opacity: 0.9; line-height: 1.6; max-width: 700px; }
+        .section { background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); margin-bottom: 20px; overflow: hidden; }
+        .section-header { background: #2E75B6; color: white; padding: 15px 20px; font-size: 16px; font-weight: bold; }
+        .section-body { padding: 20px; }
+        .rule-card { border: 1px solid #e0f0ff; border-radius: 8px; padding: 15px; margin-bottom: 12px; background: #f8fcff; }
+        .rule-card h4 { color: #2E75B6; font-size: 15px; margin-bottom: 8px; }
+        .rule-card p { font-size: 14px; color: #444; line-height: 1.6; }
+        .example { background: #e8f4f8; border-radius: 6px; padding: 10px; margin-top: 8px; font-size: 13px; color: #2E75B6; font-style: italic; }
+        .warning-card { border-left: 4px solid #dc3545; background: #fff5f5; padding: 15px; border-radius: 0 8px 8px 0; margin-bottom: 12px; }
+        .warning-card h4 { color: #dc3545; font-size: 15px; margin-bottom: 6px; }
+        .warning-card p { font-size: 14px; color: #444; line-height: 1.6; }
+        .tip-card { border-left: 4px solid #28a745; background: #f5fff7; padding: 15px; border-radius: 0 8px 8px 0; margin-bottom: 12px; }
+        .tip-card h4 { color: #28a745; font-size: 15px; margin-bottom: 6px; }
+        .tip-card p { font-size: 14px; color: #444; line-height: 1.6; }
+        .info-card { border-left: 4px solid #ffc107; background: #fffdf0; padding: 15px; border-radius: 0 8px 8px 0; margin-bottom: 12px; }
+        .info-card h4 { color: #856404; font-size: 15px; margin-bottom: 6px; }
+        .info-card p { font-size: 14px; color: #444; line-height: 1.6; }
+        .step { display: flex; gap: 15px; align-items: flex-start; padding: 15px 0; border-bottom: 1px solid #eee; }
+        .step:last-child { border-bottom: none; }
+        .step-num { background: #2E75B6; color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; flex-shrink: 0; }
+        .step-content h4 { color: #333; font-size: 15px; margin-bottom: 5px; }
+        .step-content p { font-size: 14px; color: #555; line-height: 1.6; }
+        .cob-types { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-bottom: 15px; }
+        .cob-type { border: 1px solid #ddd; border-radius: 8px; padding: 15px; }
+        .cob-type h4 { font-size: 14px; font-weight: bold; margin-bottom: 8px; }
+        .cob-type p { font-size: 13px; color: #555; line-height: 1.5; }
+        .cob-type.traditional { border-top: 4px solid #28a745; }
+        .cob-type.carveout { border-top: 4px solid #ffc107; }
+        .cob-type.nondup { border-top: 4px solid #dc3545; }
+        .cob-ex { margin-top: 8px; padding: 8px; border-radius: 5px; font-size: 12px; }
+        .primary-badge { background: #28a745; color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px; }
+        .secondary-badge { background: #6c757d; color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px; }
+        .key-point { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f0f0f0; font-size: 14px; color: #333; line-height: 1.6; }
+        .key-point:last-child { border-bottom: none; }
+        .medicaid-box { background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 15px; }
+        .medicaid-box h4 { color: #856404; font-size: 15px; margin-bottom: 8px; }
+        .medicaid-box p { font-size: 14px; color: #444; line-height: 1.6; }
+        .ref-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        .ref-table th { background: #2E75B6; color: white; padding: 10px; text-align: left; }
+        .ref-table td { padding: 10px; border-bottom: 1px solid #eee; }
+        .ref-table tr:nth-child(even) { background: #f9f9f9; }
+        .bday-table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 10px; }
+        .bday-table th { background: #2E75B6; color: white; padding: 8px 10px; text-align: left; }
+        .bday-table td { padding: 8px 10px; border-bottom: 1px solid #ddd; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Dental AI Insurance Guardian</h1>
+        <div>
+            <span class="user-info">{{ current_user.username }}</span> |
+            <a href="/logout" class="logout">Logout</a>
+        </div>
+    </div>
+    <div class="nav">
+        <a href="/dashboard">Dashboard</a>
+        <a href="/">Coverage Check</a>
+        <a href="/history">Patient History</a>
+        <a href="/reports">Reports</a>
+        <a href="/users">Users</a>
+        <a href="/cob" class="active">COB Guide</a>
+        <a href="/opendental">Open Dental</a>
+    </div>
+    <div class="hero">
+        <h2>Coordination of Benefits (COB)</h2>
+        <p>When a patient has two dental insurance plans, understanding which plan pays first and how much the second plan pays is one of the most important billing skills you will use in practice.</p>
+    </div>
+    <div class="section">
+        <div class="section-header">What is Coordination of Benefits?</div>
+        <div class="section-body">
+            <p style="font-size:14px; color:#444; line-height:1.7; margin-bottom:15px;">Coordination of Benefits (COB) is the process used when a patient has coverage under two or more dental insurance plans. COB rules determine which plan pays first (primary) and which pays second (secondary). The goal is to prevent the patient from receiving more in benefits than the actual cost of treatment.</p>
+            <div class="tip-card">
+                <h4>The Good News for Patients</h4>
+                <p>When COB is handled correctly, patients with two insurance plans often have little or no out-of-pocket cost. Always verify both plans before treatment so you can give the patient an accurate estimate.</p>
+            </div>
+            <div class="warning-card">
+                <h4>The Billing Reality</h4>
+                <p>COB errors are one of the most common causes of claim denials in dental practice. Filing claims in the wrong order, forgetting to send the primary EOB to the secondary, or not knowing which plan is primary can result in significant delays and patient frustration.</p>
+            </div>
+        </div>
+    </div>
+    <div class="section">
+        <div class="section-header">How to Determine Which Plan is Primary</div>
+        <div class="section-body">
+            <div class="rule-card">
+                <h4>Rule 1 — Employee vs Dependent</h4>
+                <p>The plan in which the patient is enrolled as the <strong>employee or main policyholder</strong> is always primary. The plan in which the patient is enrolled as a <strong>dependent</strong> is secondary.</p>
+                <div class="example">Example: Maria is covered under her own employer plan AND as a dependent on her spouse plan. Maria own employer plan is always primary.</div>
+            </div>
+            <div class="rule-card">
+                <h4>Rule 2 — The Birthday Rule (for dependent children)</h4>
+                <p>When a child is covered under both parents plans, the plan of the parent whose <strong>birthday falls earlier in the calendar year</strong> is primary. Based on month and day only — not year of birth. Age does not matter.</p>
+                <div style="background:#f0f7ff; border-radius:8px; padding:15px; margin-top:10px;">
+                    <table class="bday-table">
+                        <tr><th>Parent</th><th>Birthday</th><th>Status</th></tr>
+                        <tr><td>Parent A</td><td>March 26</td><td><span class="primary-badge">PRIMARY</span></td></tr>
+                        <tr><td>Parent B</td><td>June 11</td><td><span class="secondary-badge">SECONDARY</span></td></tr>
+                    </table>
+                    <p style="font-size:13px; color:#555; margin-top:8px;">Parent A plan is primary because March comes before June — even if Parent B is older.</p>
+                </div>
+            </div>
+            <div class="rule-card">
+                <h4>Rule 3 — Same Birthday Exception</h4>
+                <p>If both parents share the same birthday, the plan that has covered the parent <strong>for the longest time</strong> is primary.</p>
+            </div>
+            <div class="rule-card">
+                <h4>Rule 4 — Divorced or Separated Parents</h4>
+                <p>The <strong>court decree takes precedence</strong> over the birthday rule. If the decree gives joint custody without mentioning healthcare, the birthday rule applies.</p>
+                <div class="example">Always ask about divorce decrees for minor patients — they override the birthday rule.</div>
+            </div>
+            <div class="rule-card">
+                <h4>Rule 5 — Active Employment vs COBRA or Retiree Plan</h4>
+                <p>The <strong>active employer plan</strong> is always primary over a COBRA or retiree plan.</p>
+            </div>
+            <div class="rule-card">
+                <h4>Rule 6 — Two Employer Plans</h4>
+                <p>The plan that has covered the patient <strong>the longest</strong> is primary.</p>
+            </div>
+            <div class="rule-card">
+                <h4>Rule 7 — Medical Plan with Dental Benefits + Separate Dental Plan</h4>
+                <p>The <strong>medical plan</strong> is typically primary.</p>
+            </div>
+        </div>
+    </div>
+    <div class="section">
+        <div class="section-header" style="background:#dc3545;">CRITICAL — Medicaid (Denti-Cal) is ALWAYS Last</div>
+        <div class="section-body">
+            <div class="medicaid-box">
+                <h4>Denti-Cal / Medicaid is Always the Payer of Last Resort</h4>
+                <p>If a patient has <strong>both Denti-Cal AND private insurance</strong>, you must bill the private insurance first. Denti-Cal is always secondary. Failing to bill private insurance before Denti-Cal is a compliance violation and the claim will be denied.</p>
+            </div>
+            <div class="warning-card" style="margin-top:12px;">
+                <h4>Common Mistake at Dental Schools</h4>
+                <p>Many students see a Denti-Cal card and bill only Denti-Cal without asking if the patient has other insurance. Always ask every patient: "Do you have any other dental or medical insurance besides what you showed me today?"</p>
+            </div>
+        </div>
+    </div>
+    <div class="section">
+        <div class="section-header">Types of Coordination of Benefits</div>
+        <div class="section-body">
+            <p style="font-size:14px; color:#444; margin-bottom:15px;">Not all secondary plans coordinate the same way. Which method applies depends on the patient specific secondary plan.</p>
+            <div class="cob-types">
+                <div class="cob-type traditional">
+                    <h4>Traditional COB — Best for Patient</h4>
+                    <p>The secondary plan pays after the primary, potentially bringing total reimbursement up to 100% of the procedure cost.</p>
+                    <div class="cob-ex" style="background:#f0fff4; color:#155724;">$1,000 procedure. Primary pays $800. Secondary pays up to $200. Patient owes $0.</div>
+                </div>
+                <div class="cob-type carveout">
+                    <h4>Carve-Out COB — Moderate</h4>
+                    <p>The secondary calculates what it would have paid if primary, then subtracts what the primary already paid.</p>
+                    <div class="cob-ex" style="background:#fffdf0; color:#856404;">$1,000 procedure. Secondary would pay $750 if primary. Primary paid $800. Secondary pays $0.</div>
+                </div>
+                <div class="cob-type nondup">
+                    <h4>Non-Duplication COB — Worst for Patient</h4>
+                    <p>If the primary paid the same or more than the secondary would have paid, the secondary pays nothing. Common in self-funded plans. California has banned this for fully insured plans.</p>
+                    <div class="cob-ex" style="background:#fff5f5; color:#721c24;">$1,000 procedure. Primary pays $800. Secondary would have paid $750. Secondary pays $0 because $800 is more than $750.</div>
+                </div>
+            </div>
+            <div class="info-card">
+                <h4>How to Know Which Type Applies</h4>
+                <p>Call the secondary carrier and ask: "Does your plan use traditional, carve-out, or non-duplication coordination of benefits?" Document the answer in the patient chart before telling the patient their out-of-pocket cost.</p>
+            </div>
+        </div>
+    </div>
+    <div class="section">
+        <div class="section-header">Step-by-Step COB Claims Process</div>
+        <div class="section-body">
+            <div class="step">
+                <div class="step-num">1</div>
+                <div class="step-content">
+                    <h4>Verify both insurance plans at the patient first visit</h4>
+                    <p>Ask every patient: "Do you have any other dental or medical insurance?" Get both insurance cards, call both carriers to verify eligibility and coverage, and determine which plan is primary.</p>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-num">2</div>
+                <div class="step-content">
+                    <h4>Submit a pre-treatment estimate to both plans</h4>
+                    <p>Before major treatment, submit a pre-treatment estimate to the primary. Once you receive the primary response, submit it to the secondary as well so you can give the patient an accurate estimate.</p>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-num">3</div>
+                <div class="step-content">
+                    <h4>Submit the claim to the primary plan first</h4>
+                    <p>Submit the claim to the primary insurance. Wait for the primary Explanation of Benefits (EOB) before submitting to the secondary. Never submit both claims simultaneously.</p>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-num">4</div>
+                <div class="step-content">
+                    <h4>Receive and keep the primary EOB</h4>
+                    <p>The primary plan sends an EOB showing what was billed, what was allowed, what was paid, and what the patient owes. You must send this to the secondary plan.</p>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-num">5</div>
+                <div class="step-content">
+                    <h4>Submit to the secondary plan with the primary EOB attached</h4>
+                    <p>Submit a new claim to the secondary plan with a copy of the primary EOB attached. Most secondary plans will not process without it.</p>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-num">6</div>
+                <div class="step-content">
+                    <h4>Bill the patient for any remaining balance</h4>
+                    <p>After both plans have paid, bill the patient for any remaining balance. Clearly explain what each plan paid and what the patient responsibility is.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="section">
+        <div class="section-header">Common COB Mistakes Dental Students Make</div>
+        <div class="section-body">
+            <div class="key-point"><div style="font-size:16px; flex-shrink:0;">❌</div><div><strong>Not asking about secondary insurance.</strong> Always ask every patient if they have additional coverage — people frequently forget to mention a second plan.</div></div>
+            <div class="key-point"><div style="font-size:16px; flex-shrink:0;">❌</div><div><strong>Filing both claims at the same time.</strong> The secondary requires the primary EOB before processing. Filing simultaneously causes the secondary to deny.</div></div>
+            <div class="key-point"><div style="font-size:16px; flex-shrink:0;">❌</div><div><strong>Getting primary and secondary backwards.</strong> Filing to the wrong plan first causes both claims to be denied or delayed.</div></div>
+            <div class="key-point"><div style="font-size:16px; flex-shrink:0;">❌</div><div><strong>Billing Denti-Cal before private insurance.</strong> Private insurance is ALWAYS primary when a patient has both. Filing to Denti-Cal first is a compliance violation.</div></div>
+            <div class="key-point"><div style="font-size:16px; flex-shrink:0;">❌</div><div><strong>Forgetting to attach the primary EOB to the secondary claim.</strong> The secondary will automatically deny without it.</div></div>
+            <div class="key-point"><div style="font-size:16px; flex-shrink:0;">❌</div><div><strong>Assuming the secondary covers the full remaining balance.</strong> Depending on the COB method — especially non-duplication — the secondary may pay nothing.</div></div>
+            <div class="key-point"><div style="font-size:16px; flex-shrink:0;">❌</div><div><strong>Not verifying COB type before treatment.</strong> Always ask the secondary carrier which COB method they use before telling the patient their out-of-pocket cost.</div></div>
+        </div>
+    </div>
+    <div class="section">
+        <div class="section-header">Quick Reference — Who is Primary?</div>
+        <div class="section-body">
+            <table class="ref-table">
+                <tr><th>Patient Situation</th><th>Primary Plan</th><th>Secondary Plan</th></tr>
+                <tr><td>Patient has own employer plan + dependent on spouse plan</td><td><span class="primary-badge">Own employer plan</span></td><td><span class="secondary-badge">Spouse plan</span></td></tr>
+                <tr><td>Child under both parents plans (married parents)</td><td><span class="primary-badge">Earlier birthday parent</span></td><td><span class="secondary-badge">Later birthday parent</span></td></tr>
+                <tr><td>Child under both parents plans (divorced parents)</td><td><span class="primary-badge">Per court decree</span></td><td><span class="secondary-badge">Other parent plan</span></td></tr>
+                <tr><td>Active employer plan + COBRA plan</td><td><span class="primary-badge">Active employer plan</span></td><td><span class="secondary-badge">COBRA plan</span></td></tr>
+                <tr><td>Private insurance + Denti-Cal</td><td><span class="primary-badge">Private insurance</span></td><td><span class="secondary-badge">Denti-Cal (ALWAYS last)</span></td></tr>
+                <tr><td>Medical plan with dental + separate dental plan</td><td><span class="primary-badge">Medical plan</span></td><td><span class="secondary-badge">Dental plan</span></td></tr>
+            </table>
+        </div>
+    </div>
+</body>
+</html>
