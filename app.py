@@ -3,7 +3,7 @@ from flask_login import LoginManager, login_user, login_required, logout_user, c
 from werkzeug.security import generate_password_hash, check_password_hash
 from audit import log_action
 import sqlite3
-from datetime import timedelta
+from datetime import timedelta, datetime
 
 app = Flask(__name__)
 app.secret_key = "insuranceguardian2024secretkey"
@@ -138,10 +138,14 @@ def get_alert_level(result):
 
 def get_pod_stats(pod=None, username=None):
     conn = get_db()
-    cursor = conn.cursor()
     base_query = "SELECT COUNT(*) FROM audit_log WHERE action = 'COVERAGE_CHECK'"
     if username:
-        base_query += f" AND username = '{username}'"
+        total = conn.execute(base_query + " AND username = ?", (username,)).fetchone()[0]
+        red = conn.execute(base_query + " AND username = ? AND details LIKE '%Alert: red%'", (username,)).fetchone()[0]
+        yellow = conn.execute(base_query + " AND username = ? AND details LIKE '%Alert: yellow%'", (username,)).fetchone()[0]
+        green = conn.execute(base_query + " AND username = ? AND details LIKE '%Alert: green%'", (username,)).fetchone()[0]
+        conn.close()
+        return {"total": total, "red": red, "yellow": yellow, "green": green, "savings": (red + yellow) * 850}
     elif pod:
         users_in_pod = conn.execute("SELECT username FROM users WHERE pod = ?", (pod,)).fetchall()
         usernames = [u[0] for u in users_in_pod]
@@ -149,14 +153,12 @@ def get_pod_stats(pod=None, username=None):
             conn.close()
             return {"total": 0, "red": 0, "yellow": 0, "green": 0, "savings": 0}
         placeholders = ",".join(["?" for _ in usernames])
-        base_query = f"SELECT COUNT(*) FROM audit_log WHERE action = 'COVERAGE_CHECK' AND username IN ({placeholders})"
-        total = conn.execute(base_query, usernames).fetchone()[0]
-        red = conn.execute(base_query.replace("COUNT(*)", "COUNT(*)") + " AND details LIKE '%Alert: red%'", usernames).fetchone()[0]
-        yellow = conn.execute(base_query + " AND details LIKE '%Alert: yellow%'", usernames).fetchone()[0]
-        green = conn.execute(base_query + " AND details LIKE '%Alert: green%'", usernames).fetchone()[0]
+        total = conn.execute(f"SELECT COUNT(*) FROM audit_log WHERE action = 'COVERAGE_CHECK' AND username IN ({placeholders})", usernames).fetchone()[0]
+        red = conn.execute(f"SELECT COUNT(*) FROM audit_log WHERE action = 'COVERAGE_CHECK' AND details LIKE '%Alert: red%' AND username IN ({placeholders})", usernames).fetchone()[0]
+        yellow = conn.execute(f"SELECT COUNT(*) FROM audit_log WHERE action = 'COVERAGE_CHECK' AND details LIKE '%Alert: yellow%' AND username IN ({placeholders})", usernames).fetchone()[0]
+        green = conn.execute(f"SELECT COUNT(*) FROM audit_log WHERE action = 'COVERAGE_CHECK' AND details LIKE '%Alert: green%' AND username IN ({placeholders})", usernames).fetchone()[0]
         conn.close()
         return {"total": total, "red": red, "yellow": yellow, "green": green, "savings": (red + yellow) * 850}
-
     total = conn.execute(base_query).fetchone()[0]
     red = conn.execute(base_query + " AND details LIKE '%Alert: red%'").fetchone()[0]
     yellow = conn.execute(base_query + " AND details LIKE '%Alert: yellow%'").fetchone()[0]
@@ -175,20 +177,18 @@ def login():
         cursor.execute("SELECT id, username, role, pod, year_level, full_name FROM users WHERE username = ?", (username,))
         row = cursor.fetchone()
         conn.close()
-        if row and check_password_hash(
-            conn.execute("SELECT password FROM users WHERE username = ?", (username,)).fetchone()[0]
-            if False else
-            get_db().execute("SELECT password FROM users WHERE username = ?", (username,)).fetchone()[0],
-            password
-        ):
-            user = User(row[0], row[1], row[2], row[3], row[4], row[5])
-            login_user(user)
-            session.permanent = True
-            log_action(username, "LOGIN", "User logged in successfully")
-            return redirect(url_for("index"))
-        else:
-            log_action(username, "FAILED_LOGIN", "Invalid login attempt")
-            flash("Invalid username or password")
+        if row:
+            pw_conn = get_db()
+            pw_row = pw_conn.execute("SELECT password FROM users WHERE username = ?", (username,)).fetchone()
+            pw_conn.close()
+            if pw_row and check_password_hash(pw_row[0], password):
+                user = User(row[0], row[1], row[2], row[3], row[4], row[5])
+                login_user(user)
+                session.permanent = True
+                log_action(username, "LOGIN", "User logged in successfully")
+                return redirect(url_for("index"))
+        log_action(username, "FAILED_LOGIN", "Invalid login attempt")
+        flash("Invalid username or password")
     return render_template("login.html")
 
 
@@ -212,18 +212,33 @@ def index():
         patient_name = request.form.get("patient_name")
         cdt_codes = request.form.getlist("cdt_codes")
         tooth_numbers = request.form.getlist("tooth_numbers")
+        last_done_dates = request.form.getlist("last_done_dates")
         cdt_codes = [c for c in cdt_codes if c]
         for i, cdt_code in enumerate(cdt_codes):
             result = check_coverage(carrier_id, cdt_code)
             alert_level = get_alert_level(result)
             tooth = tooth_numbers[i] if i < len(tooth_numbers) else ""
             tooth_location = get_tooth_location(tooth) if tooth else ""
+            last_done = last_done_dates[i] if i < len(last_done_dates) else ""
+            freq_warning = None
+            if last_done and result and result[3] and result[3] > 0:
+                try:
+                    last_date = datetime.strptime(last_done, "%Y-%m-%d")
+                    years_since = (datetime.now() - last_date).days / 365.25
+                    if years_since < result[3]:
+                        years_remaining = result[3] - years_since
+                        months_remaining = round(years_remaining * 12)
+                        freq_warning = f"Frequency limit not met — last done {last_done}. Approximately {months_remaining} month(s) remaining before covered again."
+                except Exception:
+                    pass
             results.append({
                 "cdt_code": cdt_code,
                 "result": result,
                 "alert_level": alert_level,
                 "tooth": tooth,
-                "tooth_location": tooth_location
+                "tooth_location": tooth_location,
+                "freq_warning": freq_warning,
+                "last_done": last_done
             })
             log_action(current_user.username, "COVERAGE_CHECK",
                 f"Patient: {patient_name} | {cdt_code} | Tooth: {tooth} | carrier_id: {carrier_id} | Alert: {alert_level}")
