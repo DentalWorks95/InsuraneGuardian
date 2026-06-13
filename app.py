@@ -213,7 +213,7 @@ def index():
         cdt_codes = request.form.getlist("cdt_codes")
         tooth_numbers = request.form.getlist("tooth_numbers")
         last_done_dates = request.form.getlist("last_done_dates")
-        cdt_codes = [c for c in cdt_codes if c]
+        cdt_codes = [c.split(' ')[0].strip() for c in cdt_codes if c]
         for i, cdt_code in enumerate(cdt_codes):
             result = check_coverage(carrier_id, cdt_code)
             alert_level = get_alert_level(result)

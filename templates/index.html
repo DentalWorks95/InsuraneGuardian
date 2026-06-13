@@ -17,7 +17,7 @@
         label { font-weight: bold; display: block; margin-bottom: 5px; color: #333; font-size: 15px; margin-top: 15px; }
         input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; }
         .procedure-row { display: flex; gap: 8px; margin-bottom: 10px; align-items: flex-start; flex-wrap: wrap; }
-        .procedure-row select { flex: 2; min-width: 200px; }
+        .proc-input { flex: 2; min-width: 200px; background: white; }
         .procedure-row input { flex: 1; min-width: 80px; }
         .surface-input { background: #e8f4f8; color: #2E75B6; font-weight: bold; text-align: center; }
         .date-input { background: #fff8e1; font-size: 13px !important; min-width: 130px !important; }
@@ -66,6 +66,7 @@
         .no-result { background: #f8d7da; padding: 12px; border-radius: 8px; color: #721c24; font-size: 14px; }
         .column-labels { display: flex; gap: 8px; margin-bottom: 5px; }
         .col-label { font-size: 13px; color: #666; font-weight: bold; padding-left: 5px; }
+        .hint { font-size: 12px; color: #888; margin-top: 4px; font-style: italic; }
         @media (max-width: 600px) {
             .procedure-row { flex-direction: column; }
             .btn-row { flex-direction: column; }
@@ -94,6 +95,13 @@
         <a href="/opendental">🔗 Open Dental</a>
     </div>
 
+    <!-- Datalist for procedure code typeahead -->
+    <datalist id="procedures-list">
+        {% for proc in procedures %}
+        <option value="{{ proc[0] }}">{{ proc[0] }} — {{ proc[1] }}</option>
+        {% endfor %}
+    </datalist>
+
     <div class="form-box">
         <form method="POST" id="main-form">
             <label>Patient Name:</label>
@@ -108,7 +116,8 @@
             </select>
 
             <label>Procedures to Check:</label>
-            <div class="column-labels">
+            <div class="hint">Type a CDT code (e.g. D2740) or description to search — or use voice charting below</div>
+            <div class="column-labels" style="margin-top:8px;">
                 <div class="col-label" style="flex:2;">Procedure Code</div>
                 <div class="col-label" style="flex:1;">Tooth #</div>
                 <div class="col-label" style="flex:1;">Surfaces</div>
@@ -116,12 +125,7 @@
             </div>
             <div id="procedures-container">
                 <div class="procedure-row">
-                    <select name="cdt_codes">
-                        <option value="">-- Select Procedure --</option>
-                        {% for proc in procedures %}
-                        <option value="{{ proc[0] }}">{{ proc[0] }} - {{ proc[1] }}</option>
-                        {% endfor %}
-                    </select>
+                    <input type="text" name="cdt_codes" list="procedures-list" placeholder="Type D2740 or search..." class="proc-input" autocomplete="off">
                     <input type="text" name="tooth_numbers" placeholder="Tooth #">
                     <input type="text" name="surfaces" placeholder="Surfaces" class="surface-input">
                     <input type="date" name="last_done_dates" class="date-input" title="When was this last done?">
@@ -355,16 +359,16 @@
 
     function attachSurfaceListener(row) {
         var tsurf = row.querySelector('input[name="surfaces"]');
-        var tsel = row.querySelector('select[name="cdt_codes"]');
+        var tproc = row.querySelector('input[name="cdt_codes"]');
         var ttooth = row.querySelector('input[name="tooth_numbers"]');
-        if (!tsurf || !tsel) return;
+        if (!tsurf || !tproc) return;
         tsurf.addEventListener('input', function() {
             var surfaces = tsurf.value.trim().toUpperCase();
             if (!surfaces) return;
             var toothNum = ttooth ? ttooth.value.trim() : null;
             var newCode = getSurfaceCDT(surfaces, toothNum);
             if (!newCode) newCode = POSTERIOR_MAP[surfaces.toLowerCase()] || null;
-            if (newCode) tsel.value = newCode;
+            if (newCode) tproc.value = newCode;
         });
     }
 
@@ -442,19 +446,19 @@
         var rows = document.querySelectorAll('.procedure-row');
         var targetRow = null;
         for (var r = 0; r < rows.length; r++) {
-            var sel = rows[r].querySelector('select[name="cdt_codes"]');
+            var proc = rows[r].querySelector('input[name="cdt_codes"]');
             var tin = rows[r].querySelector('input[name="tooth_numbers"]');
-            if (sel && tin && !sel.value && !tin.value) { targetRow = rows[r]; break; }
+            if (proc && tin && !proc.value && !tin.value) { targetRow = rows[r]; break; }
         }
         if (!targetRow) {
             addProcedure();
             var allRows = document.querySelectorAll('.procedure-row');
             targetRow = allRows[allRows.length - 1];
         }
-        var tsel = targetRow.querySelector('select[name="cdt_codes"]');
+        var tproc = targetRow.querySelector('input[name="cdt_codes"]');
         var ttooth = targetRow.querySelector('input[name="tooth_numbers"]');
         var tsurf = targetRow.querySelector('input[name="surfaces"]');
-        if (tsel && detectedCode) tsel.value = detectedCode;
+        if (tproc && detectedCode) tproc.value = detectedCode;
         if (toothNum && ttooth) ttooth.value = toothNum;
         if (surfaceAbbr && tsurf) tsurf.value = surfaceAbbr;
     }
@@ -511,7 +515,7 @@
         var container = document.getElementById('procedures-container');
         var row = document.createElement('div');
         row.className = 'procedure-row';
-        row.innerHTML = '<select name="cdt_codes"><option value="">-- Select Procedure --</option>{% for proc in procedures %}<option value="{{ proc[0] }}">{{ proc[0] }} - {{ proc[1] }}</option>{% endfor %}</select><input type="text" name="tooth_numbers" placeholder="Tooth #"><input type="text" name="surfaces" placeholder="Surfaces" class="surface-input"><input type="date" name="last_done_dates" class="date-input" title="When was this last done?"><button type="button" class="remove-btn" onclick="this.parentElement.remove()">✕</button>';
+        row.innerHTML = '<input type="text" name="cdt_codes" list="procedures-list" placeholder="Type D2740 or search..." class="proc-input" autocomplete="off"><input type="text" name="tooth_numbers" placeholder="Tooth #"><input type="text" name="surfaces" placeholder="Surfaces" class="surface-input"><input type="date" name="last_done_dates" class="date-input" title="When was this last done?"><button type="button" class="remove-btn" onclick="this.parentElement.remove()">✕</button>';
         container.appendChild(row);
         attachSurfaceListener(row);
     }
